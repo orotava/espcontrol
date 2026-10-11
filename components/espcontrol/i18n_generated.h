@@ -728,6 +728,11 @@ inline const char *espcontrol_i18n_de(const char *text) {
   if (std::strcmp(text, "Connect to the WiFi hotspot") == 0) return "Verbinde dich mit dem WLAN-Hotspot";
   if (std::strcmp(text, "to configure your network.") == 0) return "um dein Netzwerk einzurichten.";
   if (std::strcmp(text, "Then visit 192.168.4.1 in your browser") == 0) return "Öffne dann 192.168.4.1 in deinem Browser";
+  if (std::strcmp(text, "Forecast unavailable") == 0) return "Vorhersage nicht verfügbar";
+  if (std::strcmp(text, "Rain chance") == 0) return "Regenwahrscheinlichkeit";
+  if (std::strcmp(text, "Rainfall") == 0) return "Niederschlag";
+  if (std::strcmp(text, "Humidity") == 0) return "Luftfeuchtigkeit";
+  if (std::strcmp(text, "Last forecast") == 0) return "Letzte Vorhersage";
   return text;
 }
 
@@ -971,6 +976,12 @@ inline const char *espcontrol_i18n_es(const char *text) {
   if (std::strcmp(text, "Connect to the WiFi hotspot") == 0) return "Conéctate al punto de acceso WiFi";
   if (std::strcmp(text, "to configure your network.") == 0) return "para configurar tu red.";
   if (std::strcmp(text, "Then visit 192.168.4.1 in your browser") == 0) return "Después abre 192.168.4.1 en tu navegador";
+  if (std::strcmp(text, "Forecast unavailable") == 0) return "Pronóstico no disponible";
+  if (std::strcmp(text, "Rain chance") == 0) return "Probabilidad de lluvia";
+  if (std::strcmp(text, "Rainfall") == 0) return "Precipitación";
+  if (std::strcmp(text, "Wind") == 0) return "Viento";
+  if (std::strcmp(text, "Humidity") == 0) return "Humedad";
+  if (std::strcmp(text, "Last forecast") == 0) return "Último pronóstico";
   return text;
 }
 
@@ -1460,6 +1471,12 @@ inline const char *espcontrol_i18n_fr(const char *text) {
   if (std::strcmp(text, "Connect to the WiFi hotspot") == 0) return "Connectez-vous au point d’accès WiFi";
   if (std::strcmp(text, "to configure your network.") == 0) return "pour configurer votre réseau.";
   if (std::strcmp(text, "Then visit 192.168.4.1 in your browser") == 0) return "Ouvrez ensuite 192.168.4.1 dans votre navigateur";
+  if (std::strcmp(text, "Forecast unavailable") == 0) return "Prévisions indisponibles";
+  if (std::strcmp(text, "Rain chance") == 0) return "Risque de pluie";
+  if (std::strcmp(text, "Rainfall") == 0) return "Précipitations";
+  if (std::strcmp(text, "Wind") == 0) return "Vent";
+  if (std::strcmp(text, "Humidity") == 0) return "Humidité";
+  if (std::strcmp(text, "Last forecast") == 0) return "Dernières prévisions";
   return text;
 }
 
@@ -2218,6 +2235,12 @@ inline const char *espcontrol_i18n_it(const char *text) {
   if (std::strcmp(text, "Connect to the WiFi hotspot") == 0) return "Connettiti all’hotspot WiFi";
   if (std::strcmp(text, "to configure your network.") == 0) return "per configurare la tua rete.";
   if (std::strcmp(text, "Then visit 192.168.4.1 in your browser") == 0) return "Poi apri 192.168.4.1 nel browser";
+  if (std::strcmp(text, "Forecast unavailable") == 0) return "Previsioni non disponibili";
+  if (std::strcmp(text, "Rain chance") == 0) return "Probabilità di pioggia";
+  if (std::strcmp(text, "Rainfall") == 0) return "Precipitazioni";
+  if (std::strcmp(text, "Wind") == 0) return "Vento";
+  if (std::strcmp(text, "Humidity") == 0) return "Umidità";
+  if (std::strcmp(text, "Last forecast") == 0) return "Ultime previsioni";
   return text;
 }
 
@@ -2700,6 +2723,11 @@ inline const char *espcontrol_i18n_nl(const char *text) {
   if (std::strcmp(text, "Connect to the WiFi hotspot") == 0) return "Maak verbinding met de WiFi-hotspot";
   if (std::strcmp(text, "to configure your network.") == 0) return "om je netwerk in te stellen.";
   if (std::strcmp(text, "Then visit 192.168.4.1 in your browser") == 0) return "Open daarna 192.168.4.1 in je browser";
+  if (std::strcmp(text, "Forecast unavailable") == 0) return "Verwachting niet beschikbaar";
+  if (std::strcmp(text, "Rain chance") == 0) return "Kans op regen";
+  if (std::strcmp(text, "Rainfall") == 0) return "Neerslag";
+  if (std::strcmp(text, "Humidity") == 0) return "Luchtvochtigheid";
+  if (std::strcmp(text, "Last forecast") == 0) return "Laatste verwachting";
   return text;
 }
 
@@ -3428,6 +3456,12 @@ inline const char *espcontrol_i18n_pt(const char *text) {
   if (std::strcmp(text, "Connect to the WiFi hotspot") == 0) return "Ligue-se ao ponto de acesso WiFi";
   if (std::strcmp(text, "to configure your network.") == 0) return "para configurar a sua rede.";
   if (std::strcmp(text, "Then visit 192.168.4.1 in your browser") == 0) return "Depois abra 192.168.4.1 no navegador";
+  if (std::strcmp(text, "Forecast unavailable") == 0) return "Previsão indisponível";
+  if (std::strcmp(text, "Rain chance") == 0) return "Probabilidade de chuva";
+  if (std::strcmp(text, "Rainfall") == 0) return "Precipitação";
+  if (std::strcmp(text, "Wind") == 0) return "Vento";
+  if (std::strcmp(text, "Humidity") == 0) return "Humidade";
+  if (std::strcmp(text, "Last forecast") == 0) return "Última previsão";
   return text;
 }
 
@@ -5447,6 +5481,12 @@ inline const char *espcontrol_i18n_key_en(const char *key) {
   if (std::strcmp(key, "connect_to_the_wifi_hotspot") == 0) return "Connect to the WiFi hotspot";
   if (std::strcmp(key, "to_configure_your_network") == 0) return "to configure your network.";
   if (std::strcmp(key, "then_visit_192_168_4_1_in_your_browser") == 0) return "Then visit 192.168.4.1 in your browser";
+  if (std::strcmp(key, "forecast_unavailable") == 0) return "Forecast unavailable";
+  if (std::strcmp(key, "rain_chance") == 0) return "Rain chance";
+  if (std::strcmp(key, "rainfall") == 0) return "Rainfall";
+  if (std::strcmp(key, "wind") == 0) return "Wind";
+  if (std::strcmp(key, "humidity") == 0) return "Humidity";
+  if (std::strcmp(key, "last_forecast") == 0) return "Last forecast";
   return key;
 }
 
@@ -6166,6 +6206,11 @@ inline const char *espcontrol_i18n_key_de(const char *key) {
   if (std::strcmp(key, "connect_to_the_wifi_hotspot") == 0) return "Verbinde dich mit dem WLAN-Hotspot";
   if (std::strcmp(key, "to_configure_your_network") == 0) return "um dein Netzwerk einzurichten.";
   if (std::strcmp(key, "then_visit_192_168_4_1_in_your_browser") == 0) return "Öffne dann 192.168.4.1 in deinem Browser";
+  if (std::strcmp(key, "forecast_unavailable") == 0) return "Vorhersage nicht verfügbar";
+  if (std::strcmp(key, "rain_chance") == 0) return "Regenwahrscheinlichkeit";
+  if (std::strcmp(key, "rainfall") == 0) return "Niederschlag";
+  if (std::strcmp(key, "humidity") == 0) return "Luftfeuchtigkeit";
+  if (std::strcmp(key, "last_forecast") == 0) return "Letzte Vorhersage";
   return espcontrol_i18n_key_en(key);
 }
 
@@ -6410,6 +6455,12 @@ inline const char *espcontrol_i18n_key_es(const char *key) {
   if (std::strcmp(key, "connect_to_the_wifi_hotspot") == 0) return "Conéctate al punto de acceso WiFi";
   if (std::strcmp(key, "to_configure_your_network") == 0) return "para configurar tu red.";
   if (std::strcmp(key, "then_visit_192_168_4_1_in_your_browser") == 0) return "Después abre 192.168.4.1 en tu navegador";
+  if (std::strcmp(key, "forecast_unavailable") == 0) return "Pronóstico no disponible";
+  if (std::strcmp(key, "rain_chance") == 0) return "Probabilidad de lluvia";
+  if (std::strcmp(key, "rainfall") == 0) return "Precipitación";
+  if (std::strcmp(key, "wind") == 0) return "Viento";
+  if (std::strcmp(key, "humidity") == 0) return "Humedad";
+  if (std::strcmp(key, "last_forecast") == 0) return "Último pronóstico";
   return espcontrol_i18n_key_en(key);
 }
 
@@ -6901,6 +6952,12 @@ inline const char *espcontrol_i18n_key_fr(const char *key) {
   if (std::strcmp(key, "connect_to_the_wifi_hotspot") == 0) return "Connectez-vous au point d’accès WiFi";
   if (std::strcmp(key, "to_configure_your_network") == 0) return "pour configurer votre réseau.";
   if (std::strcmp(key, "then_visit_192_168_4_1_in_your_browser") == 0) return "Ouvrez ensuite 192.168.4.1 dans votre navigateur";
+  if (std::strcmp(key, "forecast_unavailable") == 0) return "Prévisions indisponibles";
+  if (std::strcmp(key, "rain_chance") == 0) return "Risque de pluie";
+  if (std::strcmp(key, "rainfall") == 0) return "Précipitations";
+  if (std::strcmp(key, "wind") == 0) return "Vent";
+  if (std::strcmp(key, "humidity") == 0) return "Humidité";
+  if (std::strcmp(key, "last_forecast") == 0) return "Dernières prévisions";
   return espcontrol_i18n_key_en(key);
 }
 
@@ -7662,6 +7719,12 @@ inline const char *espcontrol_i18n_key_it(const char *key) {
   if (std::strcmp(key, "connect_to_the_wifi_hotspot") == 0) return "Connettiti all’hotspot WiFi";
   if (std::strcmp(key, "to_configure_your_network") == 0) return "per configurare la tua rete.";
   if (std::strcmp(key, "then_visit_192_168_4_1_in_your_browser") == 0) return "Poi apri 192.168.4.1 nel browser";
+  if (std::strcmp(key, "forecast_unavailable") == 0) return "Previsioni non disponibili";
+  if (std::strcmp(key, "rain_chance") == 0) return "Probabilità di pioggia";
+  if (std::strcmp(key, "rainfall") == 0) return "Precipitazioni";
+  if (std::strcmp(key, "wind") == 0) return "Vento";
+  if (std::strcmp(key, "humidity") == 0) return "Umidità";
+  if (std::strcmp(key, "last_forecast") == 0) return "Ultime previsioni";
   return espcontrol_i18n_key_en(key);
 }
 
@@ -8145,6 +8208,11 @@ inline const char *espcontrol_i18n_key_nl(const char *key) {
   if (std::strcmp(key, "connect_to_the_wifi_hotspot") == 0) return "Maak verbinding met de WiFi-hotspot";
   if (std::strcmp(key, "to_configure_your_network") == 0) return "om je netwerk in te stellen.";
   if (std::strcmp(key, "then_visit_192_168_4_1_in_your_browser") == 0) return "Open daarna 192.168.4.1 in je browser";
+  if (std::strcmp(key, "forecast_unavailable") == 0) return "Verwachting niet beschikbaar";
+  if (std::strcmp(key, "rain_chance") == 0) return "Kans op regen";
+  if (std::strcmp(key, "rainfall") == 0) return "Neerslag";
+  if (std::strcmp(key, "humidity") == 0) return "Luchtvochtigheid";
+  if (std::strcmp(key, "last_forecast") == 0) return "Laatste verwachting";
   return espcontrol_i18n_key_en(key);
 }
 
@@ -8876,6 +8944,12 @@ inline const char *espcontrol_i18n_key_pt(const char *key) {
   if (std::strcmp(key, "connect_to_the_wifi_hotspot") == 0) return "Ligue-se ao ponto de acesso WiFi";
   if (std::strcmp(key, "to_configure_your_network") == 0) return "para configurar a sua rede.";
   if (std::strcmp(key, "then_visit_192_168_4_1_in_your_browser") == 0) return "Depois abra 192.168.4.1 no navegador";
+  if (std::strcmp(key, "forecast_unavailable") == 0) return "Previsão indisponível";
+  if (std::strcmp(key, "rain_chance") == 0) return "Probabilidade de chuva";
+  if (std::strcmp(key, "rainfall") == 0) return "Precipitação";
+  if (std::strcmp(key, "wind") == 0) return "Vento";
+  if (std::strcmp(key, "humidity") == 0) return "Humidade";
+  if (std::strcmp(key, "last_forecast") == 0) return "Última previsão";
   return espcontrol_i18n_key_en(key);
 }
 
