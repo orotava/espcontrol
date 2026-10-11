@@ -85,6 +85,7 @@ export function createWebStyles(dragAnimation: boolean): string {
         ".sp-badge-row .sp-badge-slider{min-width:calc(var(--btn-label)*8)}" +
         ".sp-has-badge-row .sp-main{top:calc(var(--grid-top) + var(--btn-label)*2.53)}" +
         ".sp-badge-list{display:flex;flex-direction:column;gap:10px}" +
+        ".sp-badge-management{display:flex;gap:8px}" +
         ".sp-btn{border-radius:var(--btn-r);padding:var(--btn-pad);" +
         "display:flex;flex-direction:column;justify-content:space-between;" +
         "cursor:pointer;transition:all .2s;box-sizing:border-box;border:0;" +

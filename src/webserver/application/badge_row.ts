@@ -7,6 +7,7 @@ import { badgeRowKey, badgeRowsFromSettings, MAX_ROW_BADGES, serializeBadgeRow }
 import { updateNativePanelConfigDocument } from "../features/native_panel_config";
 import { PREVIEW_THEME_COLORS, previewEffectiveTheme } from "../state/preview_theme";
 import { escHtml, mdiIcon } from "./ui_primitives";
+import { createSettingsModal } from "../components/settings_modal";
 import type { NativePanelConfigController } from "../controllers/native_panel_config_controller";
 import type { CardRegistry } from "./card_registry";
 import type { ControlsFieldsFeature } from "./controls_fields";
@@ -31,14 +32,15 @@ export function createBadgeRowFeature(deps: {
   let row: HTMLElement | null = null;
   let overlay: HTMLElement | null = null;
   let modal: HTMLElement | null = null;
+  let config: HTMLElement | null = null;
   let draft: { page: number; index: number; button: CardConfig } | null = null;
   let saving = false;
   let loadGeneration = 0;
   const pageIndex = () => state.editingSubpage || 0;
   const badges = (page = pageIndex()) => state.badgeRows[String(page)] || [];
 
-  function button(label: string, action: () => void, className = "sp-action-btn"): HTMLButtonElement {
-    const element = shell.createActionButton(className, label) as HTMLButtonElement;
+  function button(label: string, action: () => void, className = "sp-action-btn", icon?: string, ariaLabel?: string): HTMLButtonElement {
+    const element = shell.createActionButton(className, label, icon, ariaLabel) as HTMLButtonElement;
     element.type = "button";
     element.addEventListener("click", () => { if (!saving && !shell.isConfigLocked()) action(); });
     return element;
@@ -58,14 +60,14 @@ export function createBadgeRowFeature(deps: {
     hint.textContent = "A short row above this page’s cards";
     toolbar.appendChild(hint);
     els.screenPage.insertBefore(toolbar, els.selectionBar.nextSibling);
-    overlay = document.createElement("div");
-    overlay.className = "sp-settings-overlay sp-badge-settings-overlay";
+    const settings = createSettingsModal(document, close, "Close badge settings");
+    overlay = settings.overlay;
+    modal = settings.modal;
+    config = settings.config;
+    overlay.classList.add("sp-badge-settings-overlay");
     overlay.setAttribute("role", "dialog");
     overlay.setAttribute("aria-label", "Page badges");
     overlay.setAttribute("aria-modal", "true");
-    modal = document.createElement("div");
-    modal.className = "sp-settings-modal";
-    overlay.appendChild(modal);
     overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
     overlay.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
     els.screenPage.appendChild(overlay);
@@ -98,13 +100,10 @@ export function createBadgeRowFeature(deps: {
   }
 
   function header(title: string) {
-    modal!.replaceChildren();
+    config!.replaceChildren();
     modal!.classList.remove("sp-card-type-picker-open");
-    const closeButton = button("×", close, "sp-settings-close");
-    closeButton.setAttribute("aria-label", "Close badge settings");
-    modal!.appendChild(closeButton);
     const heading = document.createElement("div"); heading.className = "sp-section-title"; heading.textContent = title;
-    modal!.appendChild(heading);
+    config!.appendChild(heading);
     overlay!.classList.add("sp-visible");
   }
 
@@ -119,8 +118,9 @@ export function createBadgeRowFeature(deps: {
     const add = button("Add badge", chooseType);
     add.disabled = badges().length >= MAX_ROW_BADGES;
     panel.appendChild(add);
-    panel.appendChild(button("Done", close));
-    modal!.appendChild(panel);
+    const actions = document.createElement("div"); actions.className = "sp-btn-row sp-btn-row--save";
+    actions.appendChild(button("Done", close, "sp-action-btn sp-save-btn"));
+    config!.append(panel, actions);
   }
 
   function chooseType() {
@@ -134,8 +134,10 @@ export function createBadgeRowFeature(deps: {
       item.innerHTML = '<span class="sp-card-type-icon mdi mdi-' + type.icon + '"></span><span class="sp-card-type-copy"><span class="sp-card-type-title">' + escHtml(type.label) + '</span><span class="sp-card-type-description">' + escHtml(type.description) + '</span></span>';
       grid.appendChild(item);
     }
-    modal!.appendChild(grid);
-    modal!.appendChild(button("Cancel", close));
+    config!.appendChild(grid);
+    const actions = document.createElement("div"); actions.className = "sp-btn-row sp-btn-row--save";
+    actions.appendChild(button("Cancel", close, "sp-action-btn sp-cancel-btn"));
+    config!.appendChild(actions);
   }
 
   async function save(next: CardConfig[]) {
@@ -149,6 +151,7 @@ export function createBadgeRowFeature(deps: {
     modal!.querySelectorAll("button,input,select").forEach(input => (input as HTMLInputElement).disabled = true);
     const result = await deps.native.schedule(current => updateNativePanelConfigDocument(current, deps.deviceProfile, "settings", badgeRowKey(page), value));
     saving = false;
+    (modal!.querySelector(".sp-settings-close") as HTMLButtonElement).disabled = false;
     modal!.removeAttribute("aria-busy");
     if (result === "saved") {
       state.badgeRows[String(page)] = next;
@@ -161,6 +164,7 @@ export function createBadgeRowFeature(deps: {
 
   function edit(index: number, subtype?: BadgeSubtype) {
     if (index >= MAX_ROW_BADGES) return;
+    config!.replaceChildren();
     draft = { page: pageIndex(), index, button: cloneCardConfig(badges()[index] || cardContractDefaultConfig("badge")) };
     if (subtype) {
       setBadgeSubtype(draft.button, subtype);
@@ -171,6 +175,7 @@ export function createBadgeRowFeature(deps: {
 
   function renderEditor() {
     if (!draft) return;
+    const settingsOpen = config!.querySelector("#sp-badge-inp-card-settings")?.getAttribute("aria-expanded") === "true";
     header(BADGE_SUBTYPES.find(type => type.key === badgeSubtype(draft!.button))!.label + " Badge");
     const current = draft;
     const panel = document.createElement("div"); panel.className = "sp-panel";
@@ -200,24 +205,34 @@ export function createBadgeRowFeature(deps: {
       },
     };
     deps.cards.definitions.badge!.renderSettings!(panel, current.button, current.index, helpers);
+    const settings = fields.groupCardSettingsFields(panel, "sp-badge-inp-", "Badge Settings");
+    if (settingsOpen) settings?.button.click();
     const actions = document.createElement("div"); actions.className = "sp-btn-row sp-btn-row--save";
-    actions.appendChild(button("Cancel", close));
-    actions.appendChild(button("Save", () => {
+    const saveButton = button("Save", () => {
       const invalid = required.find(rule => !rule.valid());
-      if (invalid) { shell.showBanner(invalid.message, "error"); invalid.input.focus(); return; }
+      if (invalid) {
+        const section = invalid.input.closest(".sp-disclosure:not(.sp-open)");
+        (section?.querySelector(".sp-disclosure-button") as HTMLButtonElement | null)?.click();
+        shell.showBanner(invalid.message, "error"); invalid.input.focus(); return;
+      }
       const next = badges(current.page).map(cloneCardConfig); next[current.index] = cloneCardConfig(current.button); void save(next);
-    }, "sp-action-btn sp-save-btn"));
+    }, "sp-action-btn sp-save-btn");
     if (current.index < badges(current.page).length) {
-      actions.appendChild(button("Delete", () => { const next = badges(current.page).map(cloneCardConfig); next.splice(current.index, 1); void save(next); }));
+      actions.classList.add("sp-has-delete");
+      const management = document.createElement("div"); management.className = "sp-badge-management";
+      management.appendChild(button("", () => { const next = badges(current.page).map(cloneCardConfig); next.splice(current.index, 1); void save(next); }, "sp-action-btn sp-delete-btn", "trash-can-outline", "Delete"));
       const reorder = (direction: number) => {
         const next = badges(current.page).map(cloneCardConfig); const destination = current.index + direction;
         next[current.index] = cloneCardConfig(current.button);
         [next[current.index], next[destination]] = [next[destination]!, next[current.index]!]; void save(next);
       };
-      if (current.index > 0) actions.appendChild(button("Move left", () => reorder(-1)));
-      if (current.index + 1 < badges(current.page).length) actions.appendChild(button("Move right", () => reorder(1)));
+      if (current.index > 0) management.appendChild(button("", () => reorder(-1), "sp-action-btn sp-delete-btn", "arrow-left", "Move left"));
+      if (current.index + 1 < badges(current.page).length) management.appendChild(button("", () => reorder(1), "sp-action-btn sp-delete-btn", "arrow-right", "Move right"));
+      actions.appendChild(management);
     }
-    panel.appendChild(actions); modal!.appendChild(panel);
+    const rightGroup = document.createElement("div"); rightGroup.className = "sp-btn-group-right";
+    rightGroup.appendChild(saveButton); actions.appendChild(rightGroup);
+    panel.appendChild(actions); config!.appendChild(panel);
   }
 
   async function load() {

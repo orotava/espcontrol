@@ -17,7 +17,8 @@ The row stays one badge high; swipe horizontally if the badges do not all fit.
 1. Open the home screen or subpage in the web editor, choose **Badges**, then
    **Add badge**. Each page supports up to eight badges.
 2. Choose a **Badge Type** from the table below.
-3. Enter its **Entity** or choose its destination **Subpage**, then choose an icon.
+3. Enter its **Entity** or choose its destination **Subpage**. Open **Badge
+   Settings** for the icon and optional display settings, as with card setup.
 4. For a Sensor, its Entity supplies the reading. For other types showing a
    live value, choose a **Display Entity**. Optionally select an attribute,
    unit and decimal places. For a Slider, leave Display Entity blank to show
@@ -28,6 +29,9 @@ Click a badge in the preview to edit it. Use **Move left**, **Move right**, or
 **Delete** in its settings to manage the row. **Save** writes badge settings
 independently of card settings. Deleting the last badge removes the row and
 returns its height to the grid.
+
+The trash and arrow buttons sit beside **Save**. Close the dialog to discard
+unsaved edits.
 
 Badge rows require firmware that supports them. They are included in exported
 configuration backups; update older panels before restoring a backup that

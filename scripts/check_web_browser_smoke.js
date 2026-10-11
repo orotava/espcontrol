@@ -6435,6 +6435,9 @@ async function assertBadgeJourney(browser, testCase) {
     if (process.env.ESPCONTROL_BADGE_SCREENSHOT) await page.locator(".sp-screen").screenshot({ path: process.env.ESPCONTROL_BADGE_SCREENSHOT });
     const dialog = page.locator(".sp-badge-settings-overlay");
     await page.locator('.sp-badge-row [data-badge-index="0"]').click();
+    assert(await page.locator("#sp-badge-inp-entity").isVisible(), "Primary entity is visible without expanding settings");
+    assert(!(await page.locator("#sp-badge-inp-badge-display").isVisible()), "Optional settings start collapsed like card settings");
+    await dialog.getByRole("button", { name: "Badge Settings", exact: true }).click();
     assert.strictEqual(await page.locator("#sp-badge-inp-badge-display").inputValue(), "value");
     assert.strictEqual(await page.locator("#sp-badge-inp-entity").inputValue(), "climate.kitchen");
     assert.strictEqual(await page.locator("#sp-badge-inp-sensor").inputValue(), "sensor.kitchen_temperature");
@@ -6479,6 +6482,17 @@ async function assertBadgeJourney(browser, testCase) {
     await addTypedBadge("sensor");
     await page.locator("#sp-badge-inp-sensor").pressSequentially("sensor.office_temperature");
     assert.equal(await page.locator("#sp-badge-inp-sensor").inputValue(), "sensor.office_temperature");
+    const modalLayout = await dialog.evaluate(overlay => {
+      const modal = overlay.querySelector(".sp-settings-modal").getBoundingClientRect();
+      const content = overlay.querySelector(".sp-config");
+      const style = getComputedStyle(content);
+      const entity = overlay.querySelector("#sp-badge-inp-sensor").getBoundingClientRect();
+      return { padding: parseFloat(style.paddingLeft), inset: entity.left - modal.left,
+        primary: !overlay.querySelector("#sp-badge-inp-sensor").closest(".sp-disclosure"),
+        closeIcon: !!overlay.querySelector(".sp-settings-close-icon") };
+    });
+    assert(modalLayout.padding > 0 && modalLayout.inset >= modalLayout.padding, "Badge fields use the shared card content margins");
+    assert(modalLayout.primary && modalLayout.closeIcon, "Badge setup uses primary fields and the shared close control");
     if (process.env.ESPCONTROL_BADGE_SETTINGS_SCREENSHOT) await dialog.locator(".sp-settings-modal").screenshot({ path: process.env.ESPCONTROL_BADGE_SETTINGS_SCREENSHOT });
     await dialog.getByRole("button", { name: "Save", exact: true }).click();
     await dialog.waitFor({ state: "hidden" });
@@ -6502,6 +6516,19 @@ async function assertBadgeJourney(browser, testCase) {
     await dialog.getByRole("button", { name: "Save", exact: true }).click();
     await dialog.waitFor({ state: "hidden" });
     assert.equal(parseBadgeRow(nativeState.document.settings.badge_row_3)[4].entity, "number.kitchen_target");
+    // On a phone, the longest footer (delete + both moves + Save) must fit.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.locator('.sp-badge-row [data-badge-index="2"]').click();
+    const footerFits = await dialog.locator(".sp-btn-row--save").evaluate(footer => {
+      const bounds = footer.getBoundingClientRect();
+      return Array.from(footer.querySelectorAll("button")).every(button => {
+        const rect = button.getBoundingClientRect();
+        return rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1;
+      });
+    });
+    assert(footerFits, "Badge management and Save buttons fit on a phone");
+    await dialog.getByRole("button", { name: "Close badge settings", exact: true }).click();
+    await page.setViewportSize(testCase.viewport);
     await page.locator(".sp-back-btn .sp-back-hit").click();
     assert.equal(await page.locator(".sp-badge-row .sp-badge-card").count(), 5);
     // Export retains both page rows. A browser reload reads them from the native document.

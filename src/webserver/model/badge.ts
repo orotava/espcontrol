@@ -9,7 +9,7 @@ export const BADGE_SUBTYPES = [
   { key: "subpage", label: "Subpage", icon: "view-grid-plus", defaultIcon: "Home", description: "Open another page." },
   { key: "switch", label: "Switch", icon: "toggle-switch", defaultIcon: "Lightbulb", description: "Toggle a light, switch or fan." },
   { key: "button", label: "Button", icon: "gesture-tap", defaultIcon: "Gesture Tap", description: "Press a Home Assistant button." },
-  { key: "slider", label: "Slider", icon: "tune-horizontal", defaultIcon: "Volume High", description: "Adjust brightness, volume or a number." },
+  { key: "slider", label: "Slider", icon: "volume-high", defaultIcon: "Volume High", description: "Adjust brightness, volume or a number." },
   { key: "modal", label: "Modal", icon: "card-outline", defaultIcon: "Home", description: "Open an existing control modal." },
 ] as const;
 export type BadgeSubtype = typeof BADGE_SUBTYPES[number]["key"];

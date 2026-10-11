@@ -19,9 +19,6 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
     },
     renderSettings(panel, button, _slot, helpers) {
       const rerender = () => helpers.renderBadgeSettings ? helpers.renderBadgeSettings() : cardUi.renderButtonSettings();
-      const settings = helpers.disclosureSection("Badge Settings", helpers.idPrefix + "badge-settings", true);
-      panel.appendChild(settings.panel);
-      panel = settings.section;
       const action = badgeAction(button);
       const subtype = badgeSubtype(button);
       function select(label: string, suffix: string, value: string, choices: Array<[string, string]>, save: (value: string) => void) {
@@ -58,15 +55,18 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
         wrapper.appendChild(input);
         panel.appendChild(wrapper);
         helpers.bindField(input, field, true);
-        if (domains) helpers.markCardPrimaryField(wrapper, field);
+        if (domains) helpers.markCardPrimaryField(wrapper, "entity");
+        else if (field === "label") helpers.markCardPrimaryField(wrapper, "name");
         if (required) helpers.requireField(input, "Choose an entity before saving.");
         return input;
       }
-      select("Badge Type", "badge-type", subtype, BADGE_SUBTYPES.map(type => [type.key, type.label]), value => {
+      const type = select("Badge Type", "badge-type", subtype, BADGE_SUBTYPES.map(type => [type.key, type.label]), value => {
         setBadgeSubtype(button, value as BadgeSubtype);
         helpers.saveField("options", button.options);
         rerender();
       });
+      helpers.markCardPrimaryField(type.parentElement, "type");
+      if (subtype !== "sensor" && button.precision !== "value") text("Label", "label", "e.g. Kitchen");
       if (action === "subpage") {
         const pages: Array<[string, string]> = [["", "Choose a subpage…"]];
         state.buttons.forEach((entry, index) => {
@@ -75,6 +75,7 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
         const current = configOptionValue(button.options, "badge_page");
         if (current && !pages.some(([key]) => key === current)) pages.push([current, "Missing subpage (slot " + current + ")"]);
         const picker = select("Subpage", "badge-page", current, pages, value => option("badge_page", value));
+        helpers.markCardPrimaryField(picker.parentElement, "entity");
         helpers.requireField(picker, "Choose a subpage before saving.");
       } else if (subtype === "sensor") {
         const input = text("Entity", "sensor", "e.g. sensor.kitchen_temperature", [], true);
@@ -101,7 +102,6 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
           rerender();
         });
       }
-      if (subtype !== "sensor" && button.precision !== "value") text("Label", "label", "e.g. Kitchen");
       if (subtype !== "sensor" && (button.precision === "value" || configOptionEnabled(button.options, "active_color"))) {
         text("Display Entity", "sensor", action === "slider" ? "Optional: defaults to the slider value" : "e.g. sensor.kitchen_temperature", [], button.precision === "value" && action !== "slider");
       }
