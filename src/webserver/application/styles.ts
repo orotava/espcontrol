@@ -78,9 +78,10 @@ export function createWebStyles(dragAnimation: boolean): string {
         "display:grid;grid-template-columns:var(--grid-cols);grid-template-rows:var(--grid-rows);gap:var(--grid-gap);overflow:hidden}" +
         ".sp-main.sp-grid-loading{visibility:hidden;opacity:0;pointer-events:none;transition:opacity .2s,visibility .2s}" +
         ".sp-badge-toolbar{display:flex;align-items:center;gap:12px;margin:8px 0;color:var(--text2);font-size:13px}.sp-badge-toolbar[hidden]{display:none}" +
-        ".sp-badge-row{position:absolute;top:var(--grid-top);left:var(--grid-left);right:var(--grid-right);height:calc(var(--btn-label)*2.2);display:flex;gap:calc(var(--btn-label)*.33);overflow-x:auto;overflow-y:hidden;scrollbar-width:none}" +
+        ".sp-badge-row{position:absolute;top:var(--grid-top);left:var(--grid-left);right:var(--grid-right);height:calc(var(--btn-label)*2.2);display:flex;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}" +
+        ".sp-badge-row-items{display:flex;flex:none;width:max-content;min-width:100%;justify-content:center;box-sizing:border-box;padding-right:calc(var(--btn-label)*.5)}" +
         ".sp-badge-row[hidden]{display:none}.sp-badge-row::-webkit-scrollbar{display:none}" +
-        ".sp-badge-row .sp-btn{flex:none;min-width:calc(var(--btn-label)*5);max-width:100%;padding:0 calc(var(--btn-label)*.5)}" +
+        ".sp-badge-row .sp-btn{flex:none;margin-left:calc(var(--btn-label)*.5);min-width:calc(var(--btn-label)*5);max-width:calc(100cqw - var(--grid-left) - var(--grid-right) - var(--btn-label));padding:0 calc(var(--btn-label)*.5)}" +
         ".sp-badge-row .sp-badge-slider{min-width:calc(var(--btn-label)*8)}" +
         ".sp-has-badge-row .sp-main{top:calc(var(--grid-top) + var(--btn-label)*2.53)}" +
         ".sp-badge-list{display:flex;flex-direction:column;gap:10px}" +

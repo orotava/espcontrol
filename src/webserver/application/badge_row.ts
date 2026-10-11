@@ -80,6 +80,9 @@ export function createBadgeRowFeature(deps: {
     if (draft && draft.page === pageIndex()) items[draft.index] = draft.button;
     els.previewScreen.classList.toggle("sp-has-badge-row", items.length > 0);
     row.hidden = items.length === 0;
+    const group = document.createElement("div");
+    group.className = "sp-badge-row-items";
+    row.appendChild(group);
     const colors = PREVIEW_THEME_COLORS[previewEffectiveTheme(state)];
     items.forEach((config, index) => {
       const preview = deps.cards.definitions.badge!.renderPreview!(config, { escHtml }) as { buttonClass: string; iconHtml: string };
@@ -89,7 +92,7 @@ export function createBadgeRowFeature(deps: {
       item.setAttribute("data-badge-index", String(index));
       item.setAttribute("aria-label", "Edit badge " + (config.label || index + 1));
       item.disabled = shell.isConfigLocked();
-      row!.appendChild(item);
+      group.appendChild(item);
     });
   }
 

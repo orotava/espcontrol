@@ -36,7 +36,20 @@ inline void badge_row_build(lv_obj_t *page, int page_index,
   lv_obj_set_scrollbar_mode(row, LV_SCROLLBAR_MODE_OFF);
   lv_obj_set_size(row, LV_PCT(100), height);
   lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
-  lv_obj_set_style_pad_column(row, gap, LV_PART_MAIN);
+  // Centre a content-sized group when it fits. Let it grow beyond the viewport
+  // for scrolling, rather than centring overflowing badges off the left edge.
+  lv_obj_t *group = lv_obj_create(row);
+  lv_obj_remove_style_all(group);
+  lv_obj_clear_flag(group, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_clear_flag(group, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_size(group, LV_SIZE_CONTENT, height);
+  lv_obj_set_style_min_width(group, LV_PCT(100), LV_PART_MAIN);
+  lv_obj_set_flex_flow(group, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(group, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  const lv_coord_t margin = line / 2;
+  lv_obj_set_style_pad_left(group, margin, LV_PART_MAIN);
+  lv_obj_set_style_pad_right(group, margin, LV_PART_MAIN);
+  lv_obj_set_style_pad_column(group, margin, LV_PART_MAIN);
   page_badge_rows().push_back({page, row, inset, {}});
   lv_obj_add_event_cb(row, [](lv_event_t *event) {
     auto &rows = page_badge_rows();
@@ -52,13 +65,13 @@ inline void badge_row_build(lv_obj_t *page, int page_index,
   for (const auto &badge : badges) {
     ParsedCfg config = parsed_cfg_from_subpage_btn(badge);
     const auto context = card_runtime_context(config, espcontrol::cards::Surface::SUBPAGE);
-    lv_obj_t *button = create_grid_card_button(row, LV_RADIUS_CIRCLE, 0, font,
+    lv_obj_t *button = create_grid_card_button(group, LV_RADIUS_CIRCLE, 0, font,
       lv_obj_get_style_text_color(reference.btn, LV_PART_MAIN));
     lv_point_t text_size{};
     lv_text_get_size(&text_size, config.label.c_str(), font, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
     const bool slider = cfg_option_value(config.options, "badge_action") == "slider";
     const lv_coord_t width = std::max<lv_coord_t>(line * (slider ? 8 : 5), text_size.x + line * 3);
-    lv_obj_set_size(button, std::min(width, lv_obj_get_content_width(page)), height);
+    lv_obj_set_size(button, std::min(width, std::max<lv_coord_t>(1, lv_obj_get_content_width(page) - 2 * margin)), height);
     apply_button_colors(button, palette.has_on, palette.on_val, palette.has_off, palette.off_val);
     BtnSlot slot = create_dynamic_card_slot(button, display_icon_font(display), display_sensor_font(display), font,
       lv_obj_get_style_text_color(reference.btn, LV_PART_MAIN), cfg.subpage_chevron_font);

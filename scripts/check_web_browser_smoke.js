@@ -6420,6 +6420,18 @@ async function assertBadgeJourney(browser, testCase) {
     assert(geometry.height < geometry.width && geometry.height > geometry.textHeight, "Badge is a compact horizontal pill with visible text");
     assert(geometry.aligned && !geometry.overflowing, "Badge icon and value fit side by side");
     assert(geometry.aboveGrid, "The short row sits above the full card grid");
+    const rowGeometry = await page.locator(".sp-badge-row").evaluate(row => {
+      const bounds = row.getBoundingClientRect();
+      const badges = Array.from(row.querySelectorAll(".sp-badge-card"));
+      const first = badges[0].getBoundingClientRect();
+      const last = badges[badges.length - 1].getBoundingClientRect();
+      return { fits: row.scrollWidth <= row.clientWidth + 1,
+        left: first.left - bounds.left, right: bounds.right - last.right,
+        margins: badges.map(badge => parseFloat(getComputedStyle(badge).marginLeft)) };
+    });
+    assert(rowGeometry.margins.every(margin => margin > 0), "Every badge has a left margin");
+    if (rowGeometry.fits) assert(Math.abs(rowGeometry.left - rowGeometry.right) < 2, "The badges are centred horizontally");
+    else assert(rowGeometry.left >= 0, "Overflowing rows keep the first badge reachable");
     if (process.env.ESPCONTROL_BADGE_SCREENSHOT) await page.locator(".sp-screen").screenshot({ path: process.env.ESPCONTROL_BADGE_SCREENSHOT });
     const dialog = page.locator(".sp-badge-settings-overlay");
     await page.locator('.sp-badge-row [data-badge-index="0"]').click();
