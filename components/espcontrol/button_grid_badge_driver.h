@@ -153,7 +153,7 @@ inline bool badge_driver_refresh_layout(BtnSlot &slot, const ParsedCfg &, const 
   clock_bar_unregister_responsive_grid_card(slot.btn);
   lv_obj_set_style_grid_cell_x_align(slot.btn, LV_GRID_ALIGN_STRETCH, LV_PART_MAIN);
   lv_obj_set_style_grid_cell_y_align(slot.btn, LV_GRID_ALIGN_CENTER, LV_PART_MAIN);
-  lv_obj_set_height(slot.btn, line * 2 + line / 5);
+  lv_obj_set_height(slot.btn, line * 2);
   lv_obj_set_style_radius(slot.btn, LV_RADIUS_CIRCLE, LV_PART_MAIN);
   return true;
 }
@@ -235,14 +235,14 @@ inline bool badge_driver_setup_visual(BtnSlot &slot, const ParsedCfg &config,
   lv_obj_set_flex_align(ctx->content, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
   const lv_font_t *label_font = slot.text_lbl ? lv_obj_get_style_text_font(slot.text_lbl, LV_PART_MAIN) : nullptr;
   const lv_coord_t line = label_font ? label_font->line_height : 24;
-  lv_obj_set_style_pad_left(ctx->content, line / 2, LV_PART_MAIN);
-  lv_obj_set_style_pad_right(ctx->content, line / 2, LV_PART_MAIN);
+  lv_obj_set_style_pad_left(ctx->content, line * 2 / 5, LV_PART_MAIN);
+  lv_obj_set_style_pad_right(ctx->content, line * 2 / 5, LV_PART_MAIN);
   lv_obj_set_style_pad_column(ctx->content, line / 3, LV_PART_MAIN);
   lv_obj_t *icon_box = lv_obj_create(ctx->content);
   lv_obj_remove_style_all(icon_box);
   lv_obj_clear_flag(icon_box, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_clear_flag(icon_box, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_size(icon_box, line * 11 / 10, line * 11 / 10);
+  lv_obj_set_size(icon_box, line, line);
   lv_obj_t *icon = lv_label_create(icon_box);
   // The main font contains every selectable icon; the smaller climate font
   // only includes climate symbols. Scale the glyph inside a compact box.
@@ -253,13 +253,14 @@ inline bool badge_driver_setup_visual(BtnSlot &slot, const ParsedCfg &config,
   lv_label_set_display_text(icon, find_icon(icon_name.c_str()));
   lv_obj_center(icon);
   const int scale = icon_font && icon_font->line_height > 0
-    ? line * 11 * 256 / (10 * icon_font->line_height) : 256;
+    ? line * 256 / icon_font->line_height : 256;
   lv_obj_set_style_transform_pivot_x(icon, LV_PCT(50), LV_PART_MAIN);
   lv_obj_set_style_transform_pivot_y(icon, LV_PCT(50), LV_PART_MAIN);
   lv_obj_set_style_transform_scale_x(icon, scale, LV_PART_MAIN);
   lv_obj_set_style_transform_scale_y(icon, scale, LV_PART_MAIN);
   ctx->value_label = lv_label_create(ctx->content);
   if (label_font) lv_obj_set_style_text_font(ctx->value_label, label_font, LV_PART_MAIN);
+  display_apply_text_width(ctx->value_label, display);
   lv_obj_set_flex_grow(ctx->value_label, 1);
   lv_label_set_long_mode(ctx->value_label, LV_LABEL_LONG_DOT);
   badge_contexts().push_back(ctx);

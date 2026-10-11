@@ -6420,6 +6420,16 @@ async function assertBadgeJourney(browser, testCase) {
     assert(geometry.height < geometry.width && geometry.height > geometry.textHeight, "Badge is a compact horizontal pill with visible text");
     assert(geometry.aligned && !geometry.overflowing, "Badge icon and value fit side by side");
     assert(geometry.aboveGrid, "The short row sits above the full card grid");
+    const typography = await page.locator(".sp-badge-text").first().evaluate(text => {
+      const badge = getComputedStyle(text);
+      const label = getComputedStyle(document.querySelector(".sp-main .sp-btn-label"));
+      const pill = text.closest(".sp-badge-card");
+      const icon = getComputedStyle(pill.querySelector(".mdi"));
+      return { matching: badge.fontFamily === label.fontFamily && badge.fontWeight === label.fontWeight && badge.fontSize === label.fontSize,
+        height: pill.getBoundingClientRect().height, textSize: parseFloat(badge.fontSize), iconSize: parseFloat(icon.fontSize) };
+    });
+    assert(typography.matching, "Badge text uses the same font, weight and size as card labels");
+    assert(typography.height <= typography.textSize * 2 + 1 && typography.iconSize <= typography.textSize + 1, "Badges and icons use the reduced compact sizes");
     const rowGeometry = await page.locator(".sp-badge-row").evaluate(row => {
       const bounds = row.getBoundingClientRect();
       const badges = Array.from(row.querySelectorAll(".sp-badge-card"));

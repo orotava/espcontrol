@@ -25,7 +25,7 @@ inline void badge_row_build(lv_obj_t *page, int page_index,
   const DisplayProfile display = display_profile_from_grid_config(cfg);
   const lv_font_t *font = lv_obj_get_style_text_font(reference.text_lbl, LV_PART_MAIN);
   const lv_coord_t line = font ? font->line_height : 24;
-  const lv_coord_t height = line * 2 + line / 5;
+  const lv_coord_t height = line * 2;
   const lv_coord_t gap = line / 3;
   const lv_coord_t inset = height + gap;
   const lv_coord_t top = lv_obj_get_style_pad_top(page, LV_PART_MAIN);
@@ -70,7 +70,7 @@ inline void badge_row_build(lv_obj_t *page, int page_index,
     lv_point_t text_size{};
     lv_text_get_size(&text_size, config.label.c_str(), font, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
     const bool slider = cfg_option_value(config.options, "badge_action") == "slider";
-    const lv_coord_t width = std::max<lv_coord_t>(line * (slider ? 8 : 5), text_size.x + line * 3);
+    const lv_coord_t width = std::max<lv_coord_t>(slider ? line * 7 : line * 9 / 2, text_size.x + line * 5 / 2);
     lv_obj_set_size(button, std::min(width, std::max<lv_coord_t>(1, lv_obj_get_content_width(page) - 2 * margin)), height);
     apply_button_colors(button, palette.has_on, palette.on_val, palette.has_off, palette.off_val);
     BtnSlot slot = create_dynamic_card_slot(button, display_icon_font(display), display_sensor_font(display), font,
