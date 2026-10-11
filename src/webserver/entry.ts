@@ -97,6 +97,7 @@ import { createAppEventsFeature, type AppEventsFeature } from "./application/app
 import { createAppFeature, type AppFeature } from "./application/app";
 import { startApp } from "./application/app_start";
 import { createReconnectController } from "./features/reconnect";
+import { registerBadgeCardTypes } from "./cards/badge";
 import { registerActionCardTypes } from "./cards/action";
 import { registerAlarmCardTypes } from "./cards/alarm";
 import { registerTimerCardTypes } from "./cards/timer";
@@ -150,6 +151,7 @@ function registerCards(context: ApplicationContext) {
     renderButtonSettings: (force?: boolean) => context.controllers.buttonSettings.render(force),
   };
   const coverLikeCards = createCoverLikeCardRegistration(registry, context.controllers.renderQueue, fields, cardUi);
+  registerBadgeCardTypes(registry, cardUi);
   registerActionCardTypes(registry, context.configuration.confirmationOptions, context.controllers.entityState, fields, cardUi);
   registerAlarmCardTypes(registry, context.configuration.accessClimateAlarm, context.controllers.renderQueue, fields, cardUi);
   registerTimerCardTypes(registry);

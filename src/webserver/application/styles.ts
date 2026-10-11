@@ -626,6 +626,11 @@ export function createWebStyles(dragAnimation: boolean): string {
         ".sp-fw-btn.sp-fw-btn-busy{background:rgba(35,37,43,.5);color:#8a8d94;" +
         "border-color:rgba(74,77,84,.45);border-radius:999px;padding:8px 28px;opacity:1}" +
         ".sp-fw-btn.sp-fw-btn-busy:hover{background:rgba(35,37,43,.5);border-color:rgba(74,77,84,.45)}" +
+        ".sp-btn.sp-badge-card{align-self:center;min-height:0;height:calc(var(--btn-label)*2.2);padding:0 calc(var(--btn-label)*.65);border-radius:999px;justify-content:center;overflow:hidden}" +
+        ".sp-badge-content{display:flex;align-items:center;gap:calc(var(--btn-label)*.4);position:relative;z-index:1;min-width:0}" +
+        ".sp-badge-content>.mdi{font-size:calc(var(--btn-label)*1.1);line-height:1;flex-shrink:0}" +
+        ".sp-badge-text{font-size:var(--btn-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}" +
+        ".sp-badge-fill{position:absolute;inset:0 auto 0 0;width:35%;background:var(--card-active-color,var(--screen-primary));opacity:.35;pointer-events:none}" +
         ".sp-btn-label-row{display:flex;align-items:baseline;width:100%;overflow:hidden;position:relative;z-index:1}" +
         ".sp-btn-label-row .sp-btn-label{flex:1;min-width:0}" +
         ".sp-subpage-badge{font-size:var(--btn-label);line-height:1;color:var(--card-text-color,var(--preview-text-primary));flex-shrink:0;" +

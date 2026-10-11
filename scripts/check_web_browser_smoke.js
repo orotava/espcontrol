@@ -6379,10 +6379,70 @@ async function assertPanelNaming(browser) {
   } finally { await context.close(); }
 }
 
+async function assertBadgeJourney(browser, testCase) {
+  const context = await browser.newContext({ viewport: testCase.viewport });
+  const saved = {};
+  await installRoutes(context, testCase.slug, { legacyTextState: saved });
+  const page = await context.newPage();
+  const errors = [];
+  page.on("pageerror", error => errors.push(error.message));
+  await installFakeEventSource(page);
+  try {
+    await page.goto(`http://espcontrol.test/${testCase.slug}?events=1`, { waitUntil: "domcontentloaded" });
+    await page.waitForSelector("#sp-app");
+    await page.waitForFunction(() => window.__eventSources?.length > 0);
+    const events = seededEvents().filter(event => !/^text-button_[1-5]_config$/.test(event.id));
+    events.push({ id: "text-button_6_config", state: ";Kitchen controls;Home;Auto;;;subpage" });
+    [
+      "climate.kitchen;Kitchen;Thermometer;Auto;sensor.kitchen_temperature;°C;badge;value;badge_action=modal",
+      ";Kitchen;Home;Auto;;;badge;label;badge_action=subpage,badge_page=6",
+      "media_player.kitchen;Volume;Volume High;Auto;;;badge;value;badge_action=slider",
+      "light.kitchen;Lights;Lightbulb;Auto;;;badge;label;badge_action=toggle,active_color",
+      ";2 open;Window Open;Auto;;;badge;label;",
+    ].forEach((state, index) => events.push({ id: `text-button_${index + 1}_config`, state }));
+    await page.evaluate(events => window.__seedEspState(events), events);
+    await page.waitForFunction(() => document.querySelectorAll(".sp-main .sp-badge-card").length === 5);
+    assert.strictEqual(await page.locator(".sp-badge-slider .sp-badge-fill").count(), 1);
+    const geometry = await page.locator('.sp-main [data-slot="1"]').evaluate(badge => {
+      const bounds = badge.getBoundingClientRect();
+      const text = badge.querySelector(".sp-badge-text");
+      const icon = badge.querySelector(".mdi");
+      return { width: bounds.width, height: bounds.height, textHeight: text.getBoundingClientRect().height,
+        aligned: Math.abs(text.getBoundingClientRect().top - icon.getBoundingClientRect().top) < bounds.height / 2,
+        overflowing: text.scrollWidth > text.clientWidth };
+    });
+    assert(geometry.height < geometry.width && geometry.height > geometry.textHeight, "Badge is a compact horizontal pill with visible text");
+    assert(geometry.aligned && !geometry.overflowing, "Badge icon and value fit side by side");
+    if (process.env.ESPCONTROL_BADGE_SCREENSHOT) await page.locator(".sp-screen").screenshot({ path: process.env.ESPCONTROL_BADGE_SCREENSHOT });
+    await page.locator('.sp-main [data-slot="1"]').click();
+    await page.getByRole("button", { name: "Edit", exact: true }).click();
+    await page.waitForSelector(".sp-settings-modal");
+    const cardSettings = page.locator(".sp-settings-modal .sp-disclosure").filter({ hasText: "Card Settings" }).first();
+    if (await cardSettings.count() && !(await cardSettings.getAttribute("class")).includes("sp-open")) await cardSettings.locator(".sp-disclosure-button").first().click();
+    assert.strictEqual(await page.locator("#sp-inp-badge-display").inputValue(), "value");
+    assert.strictEqual(await page.locator("#sp-inp-entity").inputValue(), "climate.kitchen");
+    assert.strictEqual(await page.locator("#sp-inp-sensor").inputValue(), "sensor.kitchen_temperature");
+    await page.locator("#sp-inp-badge-action").selectOption("subpage");
+    await page.locator("#sp-inp-badge-page").selectOption("6");
+    await page.locator(".sp-settings-modal .sp-save-btn").click();
+    await page.waitForSelector(".sp-settings-modal", { state: "hidden" });
+    await page.waitForFunction(() => document.querySelector('.sp-main [data-slot="1"]')?.classList.contains("sp-badge-card"));
+    await page.waitForTimeout(250);
+    const written = Object.values(saved).find(value => value.includes("sensor.kitchen_temperature") && value.includes("badge_action=subpage"));
+    assert(written && written.includes("badge_page=6"), "Saving preserves the independent display source and selected subpage");
+    assert.deepStrictEqual(errors, [], "Badge settings and save have no browser errors");
+  } finally { await context.close(); }
+}
+
 (async function main() {
   const browser = await chromium.launch();
   const acceptanceOnly = process.env.ESPCONTROL_BROWSER_ACCEPTANCE_ONLY === "1";
   try {
+    if (process.env.ESPCONTROL_BADGE_ONLY === "1") {
+      await assertBadgeJourney(browser, ACTIVE_CASES[0]);
+      console.log("Badge preview and settings browser checks passed.");
+      return;
+    }
     if (process.env.ESPCONTROL_RESET_ONLY === "1") {
       await assertResetControls(browser);
       console.log("Factory reset confirmation browser checks passed.");
@@ -6400,6 +6460,7 @@ async function assertPanelNaming(browser) {
     await assertResetControls(browser);
     for (const testCase of ACTIVE_CASES) {
       if (!acceptanceOnly) {
+        if (testCase.exerciseInteractions) await assertBadgeJourney(browser, testCase);
         await runCase(browser, testCase);
         await assertMediaModalSettingsJourney(browser, testCase);
       }

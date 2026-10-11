@@ -66,3 +66,5 @@
 #include "button_grid_grid.h"
 
 #include "button_grid_remote_modal.h"
+
+#include "button_grid_badge_navigation.h"

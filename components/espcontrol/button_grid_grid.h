@@ -232,6 +232,7 @@ inline TransientStatusLabel *grid_track_transient_status_label_runtime(
 inline TransientStatusLabel *grid_delete_transient_status_label_with_owner(
     lv_obj_t *owner, TransientStatusLabel *ctx);
 
+#include "button_grid_badge_driver.h"
 #include "button_grid_status_entity_driver.h"
 
 inline lv_coord_t large_sensor_unit_offset_px(const lv_font_t *large_font, int percent) {
@@ -563,6 +564,7 @@ inline void setup_card_visual(BtnSlot &s, const ParsedCfg &p,
   const DisplayProfile display = display_profile_from_grid_config(cfg);
   const CardPalette palette = card_palette_for_config(default_palette, p, display);
   const auto family = context.family;
+  espcontrol::cards::badge_driver_cleanup(s, p, context);
   grid_prepare_timer_visual_reset(s.btn);
   espcontrol::cards::status_entity_driver_cleanup(s, p, context);
   espcontrol::cards::date_time_driver_cleanup(s, p, context);
@@ -611,6 +613,10 @@ inline void setup_card_visual(BtnSlot &s, const ParsedCfg &p,
   if (context.known) screen_lock_register_controlled_button(s.btn);
 
   if (espcontrol::cards::timer_driver_setup_visual(s, p, context)) return;
+  if (espcontrol::cards::badge_driver_setup_visual(s, p, context, display)) {
+    espcontrol::cards::badge_driver_refresh_layout(s, p, context);
+    return;
+  }
   if (espcontrol::cards::image_driver_setup_visual(s, p, context, palette)) {
     espcontrol::cards::image_driver_attach_interaction(s, p, context);
     espcontrol::cards::image_driver_refresh_layout(s, p, context);
@@ -949,6 +955,7 @@ inline void refresh_card_layout(BtnSlot &s, const ParsedCfg &p,
   display_apply_main_width(s.icon_lbl, display);
   control_modal_register_card_label(s);
   display_apply_slot_text_width(s, display);
+  if (espcontrol::cards::badge_driver_refresh_layout(s, p, context)) return;
   if (espcontrol::cards::navigation_driver_refresh_layout(
         s, p, context, cfg)) return;
 
@@ -1969,6 +1976,7 @@ inline void grid_phase2(
     int col_span = order.col_span[idx - 1] > 0 ? order.col_span[idx - 1] : 1;
     if (cfg.info_only && info_only_hidden_card_type(context)) continue;
     navigation_register_home_target(idx, pos, p.label, scfg, s.btn);
+    if (espcontrol::cards::badge_driver_bind_main(s, p, context)) continue;
     if (espcontrol::cards::image_driver_bind_main(
           s, p, context, cfg, palette)) continue;
     if (espcontrol::cards::wifi_qr_driver_bind_main(s, p, context)) continue;
@@ -2203,6 +2211,9 @@ inline void grid_phase2(
       // the card-specific refresh after clamping to restore the captured inset.
       refresh_card_layout(sub_slot, sb_cfg, cfg, rs, cs);
 
+      if (espcontrol::cards::badge_driver_bind_subpage(
+            sub_slot, sb_cfg, context,
+            [&](const std::string &entity_id) { add_parent_indicator(entity_id); })) continue;
       if (espcontrol::cards::image_driver_bind_subpage(
             sub_slot, sb_cfg, context, cfg, palette)) continue;
       if (espcontrol::cards::wifi_qr_driver_bind_subpage(

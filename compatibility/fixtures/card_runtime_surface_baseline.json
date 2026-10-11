@@ -2,6 +2,198 @@
   "baselineVersion": 1,
   "cases": [
     {
+      "name": "badge: label",
+      "sourceKind": "contract",
+      "sourceType": "badge",
+      "mode": "label",
+      "canonicalType": "badge",
+      "web": {
+        "registration": "badge",
+        "picker": {
+          "main": true,
+          "subpage": true,
+          "infoOnly": false
+        },
+        "preview": {
+          "available": true,
+          "fingerprint": "08831446f9240c53"
+        }
+      },
+      "firmware": {
+        "family": "BADGE"
+      },
+      "lifecycle": {
+        "subscriptions": [
+          "state",
+          "attributes"
+        ],
+        "actions": [
+          "none"
+        ],
+        "modalOwner": "none"
+      }
+    },
+    {
+      "name": "badge: value",
+      "sourceKind": "contract",
+      "sourceType": "badge",
+      "mode": "value",
+      "canonicalType": "badge",
+      "web": {
+        "registration": "badge",
+        "picker": {
+          "main": true,
+          "subpage": true,
+          "infoOnly": false
+        },
+        "preview": {
+          "available": true,
+          "fingerprint": "f879abd6e55331a8"
+        }
+      },
+      "firmware": {
+        "family": "BADGE"
+      },
+      "lifecycle": {
+        "subscriptions": [
+          "state",
+          "attributes"
+        ],
+        "actions": [
+          "none"
+        ],
+        "modalOwner": "none"
+      }
+    },
+    {
+      "name": "badge: subpage",
+      "sourceKind": "contract",
+      "sourceType": "badge",
+      "mode": "subpage",
+      "canonicalType": "badge",
+      "web": {
+        "registration": "badge",
+        "picker": {
+          "main": true,
+          "subpage": true,
+          "infoOnly": false
+        },
+        "preview": {
+          "available": true,
+          "fingerprint": "394b946a5762b1af"
+        }
+      },
+      "firmware": {
+        "family": "BADGE"
+      },
+      "lifecycle": {
+        "subscriptions": [
+          "state",
+          "attributes"
+        ],
+        "actions": [
+          "navigation"
+        ],
+        "modalOwner": "none"
+      }
+    },
+    {
+      "name": "badge: modal",
+      "sourceKind": "contract",
+      "sourceType": "badge",
+      "mode": "modal",
+      "canonicalType": "badge",
+      "web": {
+        "registration": "badge",
+        "picker": {
+          "main": true,
+          "subpage": true,
+          "infoOnly": false
+        },
+        "preview": {
+          "available": true,
+          "fingerprint": "394b946a5762b1af"
+        }
+      },
+      "firmware": {
+        "family": "BADGE"
+      },
+      "lifecycle": {
+        "subscriptions": [
+          "state",
+          "attributes"
+        ],
+        "actions": [
+          "modal"
+        ],
+        "modalOwner": "badge"
+      }
+    },
+    {
+      "name": "badge: toggle",
+      "sourceKind": "contract",
+      "sourceType": "badge",
+      "mode": "toggle",
+      "canonicalType": "badge",
+      "web": {
+        "registration": "badge",
+        "picker": {
+          "main": true,
+          "subpage": true,
+          "infoOnly": false
+        },
+        "preview": {
+          "available": true,
+          "fingerprint": "394b946a5762b1af"
+        }
+      },
+      "firmware": {
+        "family": "BADGE"
+      },
+      "lifecycle": {
+        "subscriptions": [
+          "state",
+          "attributes"
+        ],
+        "actions": [
+          "home_assistant_service"
+        ],
+        "modalOwner": "none"
+      }
+    },
+    {
+      "name": "badge: slider",
+      "sourceKind": "contract",
+      "sourceType": "badge",
+      "mode": "slider",
+      "canonicalType": "badge",
+      "web": {
+        "registration": "badge",
+        "picker": {
+          "main": true,
+          "subpage": true,
+          "infoOnly": false
+        },
+        "preview": {
+          "available": true,
+          "fingerprint": "061c30154bcd660b"
+        }
+      },
+      "firmware": {
+        "family": "BADGE"
+      },
+      "lifecycle": {
+        "subscriptions": [
+          "state",
+          "attributes"
+        ],
+        "actions": [
+          "home_assistant_service"
+        ],
+        "modalOwner": "none"
+      }
+    },
+    {
       "name": "timer: countdown",
       "sourceKind": "contract",
       "sourceType": "timer",

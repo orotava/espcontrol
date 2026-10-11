@@ -616,3 +616,15 @@ add_test(NAME home_assistant_endpoint_probe_test COMMAND home_assistant_endpoint
 
 add_test(NAME clock_screensaver_time_test COMMAND
   ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/clock_screensaver_time_test.py)
+
+add_executable(badge_policy_test badge_policy_test.cpp)
+target_include_directories(badge_policy_test PRIVATE ../../components/espcontrol)
+add_test(NAME badge_policy_test COMMAND badge_policy_test)
+add_executable(badge_navigation_test badge_navigation_test.cpp)
+target_include_directories(badge_navigation_test PRIVATE ../../components/espcontrol)
+add_test(NAME badge_navigation_test COMMAND badge_navigation_test)
+
+foreach(badge_target badge_policy_test badge_navigation_test)
+  target_compile_features(${badge_target} PRIVATE cxx_std_17)
+  target_compile_options(${badge_target} PRIVATE -Wall -Wextra -Werror -UNDEBUG)
+endforeach()
