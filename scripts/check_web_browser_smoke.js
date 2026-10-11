@@ -2440,7 +2440,7 @@ async function assertEmptyCellSettings(page, posts, label) {
     closeControl.borderWidth >= 1,
     `${label}: settings modal close control has a visible container border`,
   );
-  await page.locator(".sp-settings-close").click();
+  await page.getByRole("button", { name: "Close settings", exact: true }).click();
   await page.waitForFunction(() => {
     var overlay = document.querySelector(".sp-settings-overlay");
     return overlay && !overlay.classList.contains("sp-visible");
@@ -2513,7 +2513,7 @@ async function assertEmptyCellSettings(page, posts, label) {
     0,
     `${label}: unsaved new card keeps Delete hidden after type selection`,
   );
-  await page.locator(".sp-settings-close").click();
+  await page.getByRole("button", { name: "Close settings", exact: true }).click();
   await emptyCell.click();
   await page.getByRole("button", { name: "Sensor card type" }).click();
   await page
@@ -2593,7 +2593,7 @@ async function assertEmptyCellSettings(page, posts, label) {
       await page.getByRole("button", { name: "Text", exact: true }).isVisible(),
     `${label}: Local Sensor retains its Numeric and Text mode buttons`,
   );
-  await page.locator(".sp-settings-close").click();
+  await page.getByRole("button", { name: "Close settings", exact: true }).click();
   await page.waitForFunction(() => {
     var overlay = document.querySelector(".sp-settings-overlay");
     return overlay && !overlay.classList.contains("sp-visible");
@@ -2670,7 +2670,7 @@ async function assertNewMediaCardDefaults(page, posts, label, mediaCoverArtSuppo
     );
   }
 
-  await page.locator(".sp-settings-close").click();
+  await page.getByRole("button", { name: "Close settings", exact: true }).click();
   await page.waitForFunction(() => {
     const overlay = document.querySelector(".sp-settings-overlay");
     return overlay && !overlay.classList.contains("sp-visible");
@@ -2692,7 +2692,7 @@ async function assertNewMediaCardDefaults(page, posts, label, mediaCoverArtSuppo
     "Custom media label",
     `${label}: changing Media mode preserves its custom label`,
   );
-  await page.locator(".sp-settings-close").click();
+  await page.getByRole("button", { name: "Close settings", exact: true }).click();
   await page.waitForFunction(() => {
     const overlay = document.querySelector(".sp-settings-overlay");
     return overlay && !overlay.classList.contains("sp-visible");
@@ -2793,7 +2793,7 @@ async function assertAllCardSettingsGrouped(page, posts, label) {
     );
   for (const [index, cardOption] of cardOptions.entries()) {
     if (index > 0) {
-      await page.locator(".sp-settings-close").click();
+      await page.getByRole("button", { name: "Close settings", exact: true }).click();
       await emptyCell.click();
     }
     await page.locator(`.sp-card-type-option[data-card-type="${cardOption.value}"]`).click();
@@ -2876,7 +2876,7 @@ async function assertAllCardSettingsGrouped(page, posts, label) {
     }
   }
 
-  await page.locator(".sp-settings-close").click();
+  await page.getByRole("button", { name: "Close settings", exact: true }).click();
   await page.waitForFunction(() => {
     const overlay = document.querySelector(".sp-settings-overlay");
     return overlay && !overlay.classList.contains("sp-visible");
@@ -2950,7 +2950,7 @@ async function assertFanOptionalLightSettings(page, label) {
     false,
     `${label}: configured Light tab should be disableable without clearing its entity`,
   );
-  await page.locator(".sp-settings-close").click();
+  await page.getByRole("button", { name: "Close settings", exact: true }).click();
   await page.waitForFunction(() => {
     const overlay = document.querySelector(".sp-settings-overlay");
     return overlay && !overlay.classList.contains("sp-visible");
@@ -3024,7 +3024,7 @@ async function assertInternalControlsPanel(page, posts, label) {
     );
   }
 
-  await page.locator(".sp-settings-close").click();
+  await page.getByRole("button", { name: "Close settings", exact: true }).click();
   await page.waitForFunction(() => {
     const overlay = document.querySelector(".sp-settings-overlay");
     return overlay && !overlay.classList.contains("sp-visible");
@@ -3114,7 +3114,7 @@ async function assertWebhookSettingsPanel(page, posts, label) {
     `${label}: missing webhook URL should remain visibly invalid`,
   );
 
-  await page.locator(".sp-settings-close").click();
+  await page.getByRole("button", { name: "Close settings", exact: true }).click();
   await page.waitForFunction(() => {
     const overlay = document.querySelector(".sp-settings-overlay");
     return overlay && !overlay.classList.contains("sp-visible");
@@ -3170,7 +3170,7 @@ async function assertCoverSettingsPanels(page, label) {
     return panel && getComputedStyle(panel).display === "none";
   });
 
-  await page.locator(".sp-settings-close").click();
+  await page.getByRole("button", { name: "Close settings", exact: true }).click();
   await page.waitForFunction(() => {
     var overlay = document.querySelector(".sp-settings-overlay");
     return overlay && !overlay.classList.contains("sp-visible");
@@ -3214,7 +3214,7 @@ async function assertCameraRefreshSettings(page, posts, label) {
   assert.strictEqual(posts.length, before, `${label}: invalid refresh drafts must not save`);
   await page.locator("#sp-inp-entity").fill("image.front_door");
   assert(!(await mode.isVisible()), `${label}: image entities use revision events instead of polling controls`);
-  await page.locator(".sp-settings-close").click();
+  await page.getByRole("button", { name: "Close settings", exact: true }).click();
   await page.waitForFunction(() => !document.querySelector(".sp-settings-overlay").classList.contains("sp-visible"));
 }
 
@@ -3325,7 +3325,7 @@ async function assertMediaCoverArtSettingsPanels(page, label) {
     `${label}: Cover Art secondary entity picker should be visible`,
   );
 
-  await page.locator(".sp-settings-close").click();
+  await page.getByRole("button", { name: "Close settings", exact: true }).click();
   await page.waitForFunction(() => {
     var overlay = document.querySelector(".sp-settings-overlay");
     return overlay && !overlay.classList.contains("sp-visible");
@@ -3415,7 +3415,7 @@ async function assertAlarmSettingsPanels(page, label) {
   assert(await pinSettings.getByText("PIN required for arming", { exact: true }).isVisible(), `${label}: alarm PIN settings panel should contain arming PIN controls`);
   assert(await pinSettings.getByText("PIN required for disarming", { exact: true }).isVisible(), `${label}: alarm PIN settings panel should contain disarming PIN controls`);
 
-  await page.locator(".sp-settings-close").click();
+  await page.getByRole("button", { name: "Close settings", exact: true }).click();
   await page.waitForFunction(() => {
     var overlay = document.querySelector(".sp-settings-overlay");
     return overlay && !overlay.classList.contains("sp-visible");
@@ -3466,7 +3466,7 @@ async function assertPlaylistValidationOpensSourcePanel(page, label) {
     `${label}: playlist content ID error should be visible after validation`,
   );
 
-  await page.locator(".sp-settings-close").click();
+  await page.getByRole("button", { name: "Close settings", exact: true }).click();
   await page.waitForFunction(() => {
     var overlay = document.querySelector(".sp-settings-overlay");
     return overlay && !overlay.classList.contains("sp-visible");
@@ -3513,7 +3513,7 @@ async function assertNumberActionRequiresValue(page, posts, label) {
     0,
     `${label}: entering a number action value should clear the validation error`,
   );
-  await page.locator(".sp-settings-close").click();
+  await page.getByRole("button", { name: "Close settings", exact: true }).click();
   await page.waitForFunction(() => {
     const overlay = document.querySelector(".sp-settings-overlay");
     return overlay && !overlay.classList.contains("sp-visible");
@@ -5568,7 +5568,7 @@ async function assertGuestWifiSettings(page, label) {
   await page.locator("#sp-inp-wifi-tab-guest + .sp-toggle-track").click();
   assert.strictEqual(await guestEntity.inputValue(), "switch.guest_wifi", `${label}: disabled tabs retain their switch`);
   await page.locator("#sp-inp-wifi-tab-guest + .sp-toggle-track").click();
-  await page.locator(".sp-settings-close").click();
+  await page.getByRole("button", { name: "Close settings", exact: true }).click();
   await page.waitForFunction(() => !document.querySelector(".sp-settings-overlay.sp-visible"));
 }
 
