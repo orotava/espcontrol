@@ -5,11 +5,11 @@ It records the pre-migration baseline; it does not move executable behaviour int
 
 - Contract types: 44
 - Runtime-only types: 3
-- Baseline cases: 100
+- Baseline cases: 101
 
 | Contract type | Classification | Runtime driver | Capabilities | Canonical saved type | Web registration | Firmware family | Cases |
 |---|---|---|---|---|---|---|---:|
-| badge | canonical | badge | subscriptions, actions, numericControl, modal, runtimeAllocation, subpage | badge | badge | BADGE | 6 |
+| badge | canonical | badge | subscriptions, actions, numericControl, modal, runtimeAllocation, subpage | badge | badge | BADGE | 7 |
 | timer | canonical | timer | subscriptions, actions, runtimeAllocation, subpage | timer | timer | TIMER | 2 |
 | (switch) | canonical | toggle | subscriptions, actions, subpage | (switch) | (switch) | TOGGLE | 1 |
 | action | canonical | action | subscriptions, actions, runtimeAllocation, subpage | action | action | ACTION | 2 |

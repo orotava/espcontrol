@@ -5,6 +5,13 @@
 int main() {
   using namespace espcontrol::badge;
   assert(action("erase") == "display");
+  assert(action("button") == "button");
+  assert(button_supported("button.restart"));
+  assert(button_supported("input_button.scene"));
+  assert(!button_supported("switch.lights"));
+  assert(!button_supported("button."));
+  assert(std::string(button_action("button.restart")) == "button.press");
+  assert(std::string(button_action("input_button.scene")) == "input_button.press");
   assert(toggle_supported("light.kitchen"));
   assert(!toggle_supported("lock.front_door"));
   assert(!toggle_supported("light."));

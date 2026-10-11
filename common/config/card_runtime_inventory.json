@@ -87,6 +87,18 @@
           }
         },
         {
+          "name": "button",
+          "config": {
+            "entity": "button.example",
+            "options": "badge_action=button"
+          },
+          "lifecycle": {
+            "subscriptions": ["state", "attributes"],
+            "actions": ["home_assistant_service"],
+            "modalOwner": "none"
+          }
+        },
+        {
           "name": "slider",
           "config": {
             "entity": "light.example",

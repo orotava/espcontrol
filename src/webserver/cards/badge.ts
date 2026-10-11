@@ -2,7 +2,7 @@ import type { CardRegistry, CardUiServices } from "../application/card_registry"
 import { state } from "../state/app_instance";
 import { cardContractDefaultConfig } from "../generated/card_contract";
 import { configOptionEnabled, configOptionValue, setConfigOptionValue } from "../model/config_primitives";
-import { badgeAction, normalizeBadgeConfig } from "../model/badge";
+import { BADGE_SUBTYPES, badgeAction, badgeSubtype, normalizeBadgeConfig, setBadgeSubtype, type BadgeSubtype } from "../model/badge";
 import { iconSlug } from "../application/ui_primitives";
 
 export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiServices): void {
@@ -23,6 +23,7 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
       panel.appendChild(settings.panel);
       panel = settings.section;
       const action = badgeAction(button);
+      const subtype = badgeSubtype(button);
       function select(label: string, suffix: string, value: string, choices: Array<[string, string]>, save: (value: string) => void) {
         const field = document.createElement("div");
         field.className = "sp-field";
@@ -61,14 +62,11 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
         if (required) helpers.requireField(input, "Choose an entity before saving.");
         return input;
       }
-      helpers.renderCardIconPicker(panel, button, helpers, { field: "icon", fallback: "Auto", label: "Icon" });
-      select("Display", "badge-display", button.precision || "label", [["label", "Label"], ["value", "Live value"]], value => {
-        button.precision = value;
-        helpers.saveField("precision", value);
+      select("Badge Type", "badge-type", subtype, BADGE_SUBTYPES.map(type => [type.key, type.label]), value => {
+        setBadgeSubtype(button, value as BadgeSubtype);
+        helpers.saveField("options", button.options);
         rerender();
       });
-      if (button.precision !== "value") text("Label", "label", "e.g. Kitchen");
-      select("Interaction", "badge-action", action, [["display", "Display only"], ["subpage", "Open subpage"], ["modal", "Open control modal"], ["toggle", "Toggle"], ["slider", "Slider"]], value => option("badge_action", value, true));
       if (action === "subpage") {
         const pages: Array<[string, string]> = [["", "Choose a subpage…"]];
         state.buttons.forEach((entry, index) => {
@@ -78,10 +76,15 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
         if (current && !pages.some(([key]) => key === current)) pages.push([current, "Missing subpage (slot " + current + ")"]);
         const picker = select("Subpage", "badge-page", current, pages, value => option("badge_page", value));
         helpers.requireField(picker, "Choose a subpage before saving.");
-      } else if (action !== "display") {
+      } else if (subtype === "sensor") {
+        const input = text("Entity", "sensor", "e.g. sensor.kitchen_temperature", [], true);
+        input.addEventListener("input", () => { button.precision = "value"; helpers.saveField("precision", "value"); });
+        input.addEventListener("change", () => { button.precision = "value"; helpers.saveField("precision", "value"); });
+      } else {
         const domains = action === "slider" ? ["light", "fan", "number", "input_number", "media_player"]
-          : action === "toggle" ? ["light", "switch", "input_boolean", "fan"] : [];
-        const input = text("Control Entity", "entity", action === "slider" ? "e.g. light.kitchen" : "e.g. light.living_room", domains, true);
+          : action === "toggle" ? ["light", "switch", "input_boolean", "fan"]
+          : action === "button" ? ["button", "input_button"] : [];
+        const input = text("Entity", "entity", action === "button" ? "e.g. button.restart" : "e.g. light.kitchen", domains, true);
         if (domains.length) helpers.requireEntityDomain(input, domains, "Choose a supported entity for this interaction.");
         if (action === "modal") {
           const note = document.createElement("p");
@@ -90,10 +93,19 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
           panel.appendChild(note);
         }
       }
-      if (button.precision === "value" || configOptionEnabled(button.options, "active_color")) {
+      helpers.renderCardIconPicker(panel, button, helpers, { field: "icon", fallback: "Auto", label: "Icon" });
+      if (subtype !== "sensor" && subtype !== "button") {
+        select("Display", "badge-display", button.precision || "label", [["label", "Label"], ["value", "Live value"]], value => {
+          button.precision = value;
+          helpers.saveField("precision", value);
+          rerender();
+        });
+      }
+      if (subtype !== "sensor" && button.precision !== "value") text("Label", "label", "e.g. Kitchen");
+      if (subtype !== "sensor" && (button.precision === "value" || configOptionEnabled(button.options, "active_color"))) {
         text("Display Entity", "sensor", action === "slider" ? "Optional: defaults to the slider value" : "e.g. sensor.kitchen_temperature", [], button.precision === "value" && action !== "slider");
       }
-      if (button.precision === "value") {
+      if (subtype === "sensor" || button.precision === "value") {
         text("Unit (optional)", "unit", "Auto, e.g. °C");
         const field = document.createElement("div");
         field.className = "sp-field";
@@ -104,9 +116,11 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
         panel.appendChild(field);
         select("Decimal Places", "badge-decimals", configOptionValue(button.options, "badge_decimals") || "1", [["0", "0"], ["1", "1"], ["2", "2"]], value => option("badge_decimals", value));
       }
-      const tint = helpers.toggleRow("Lit When Active", helpers.idPrefix + "badge-active", configOptionEnabled(button.options, "active_color"));
-      tint.input.addEventListener("change", () => option("active_color", tint.input.checked ? "1" : "", true));
-      panel.appendChild(tint.row);
+      if (subtype !== "button") {
+        const tint = helpers.toggleRow("Lit When Active", helpers.idPrefix + "badge-active", configOptionEnabled(button.options, "active_color"));
+        tint.input.addEventListener("change", () => option("active_color", tint.input.checked ? "1" : "", true));
+        panel.appendChild(tint.row);
+      }
     },
     renderPreview(button, helpers) {
       const action = badgeAction(button);

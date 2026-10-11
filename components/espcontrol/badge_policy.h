@@ -6,8 +6,16 @@
 namespace espcontrol::badge {
 
 inline std::string action(const std::string &value) {
-  return value == "subpage" || value == "modal" || value == "toggle" ||
+  return value == "subpage" || value == "modal" || value == "toggle" || value == "button" ||
          value == "slider" ? value : "display";
+}
+
+inline bool button_supported(const std::string &entity) {
+  return number_slider::has_domain(entity, "button") || number_slider::has_domain(entity, "input_button");
+}
+
+inline const char *button_action(const std::string &entity) {
+  return number_slider::has_domain(entity, "input_button") ? "input_button.press" : "button.press";
 }
 
 inline bool toggle_supported(const std::string &entity) {

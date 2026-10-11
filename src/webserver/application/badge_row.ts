@@ -2,6 +2,7 @@ import { state } from "../state/app_instance";
 import type { CardConfig } from "../contracts/types";
 import { cardContractDefaultConfig } from "../generated/card_contract";
 import { cloneCardConfig } from "../model/card";
+import { BADGE_SUBTYPES, badgeSubtype, setBadgeSubtype, type BadgeSubtype } from "../model/badge";
 import { badgeRowKey, badgeRowsFromSettings, MAX_ROW_BADGES, serializeBadgeRow } from "../model/badge_row";
 import { updateNativePanelConfigDocument } from "../features/native_panel_config";
 import { PREVIEW_THEME_COLORS, previewEffectiveTheme } from "../state/preview_theme";
@@ -98,6 +99,7 @@ export function createBadgeRowFeature(deps: {
 
   function header(title: string) {
     modal!.replaceChildren();
+    modal!.classList.remove("sp-card-type-picker-open");
     const closeButton = button("×", close, "sp-settings-close");
     closeButton.setAttribute("aria-label", "Close badge settings");
     modal!.appendChild(closeButton);
@@ -114,11 +116,26 @@ export function createBadgeRowFeature(deps: {
       const hint = document.createElement("p"); hint.className = "sp-hint"; hint.textContent = "Add an icon with a label or live value above the card grid."; panel.appendChild(hint);
     }
     badges().forEach((badge, index) => panel.appendChild(button(badge.label || badge.sensor || "Badge " + (index + 1), () => edit(index))));
-    const add = button("Add badge", () => edit(badges().length));
+    const add = button("Add badge", chooseType);
     add.disabled = badges().length >= MAX_ROW_BADGES;
     panel.appendChild(add);
     panel.appendChild(button("Done", close));
     modal!.appendChild(panel);
+  }
+
+  function chooseType() {
+    header("Choose Badge Type");
+    modal!.classList.add("sp-card-type-picker-open");
+    const grid = document.createElement("div"); grid.className = "sp-card-type-grid";
+    for (const type of BADGE_SUBTYPES) {
+      const item = button("", () => edit(badges().length, type.key), "sp-card-type-option");
+      item.setAttribute("data-badge-type", type.key);
+      item.setAttribute("aria-label", type.label + " badge type");
+      item.innerHTML = '<span class="sp-card-type-icon mdi mdi-' + type.icon + '"></span><span class="sp-card-type-copy"><span class="sp-card-type-title">' + escHtml(type.label) + '</span><span class="sp-card-type-description">' + escHtml(type.description) + '</span></span>';
+      grid.appendChild(item);
+    }
+    modal!.appendChild(grid);
+    modal!.appendChild(button("Cancel", close));
   }
 
   async function save(next: CardConfig[]) {
@@ -142,15 +159,19 @@ export function createBadgeRowFeature(deps: {
     }
   }
 
-  function edit(index: number) {
+  function edit(index: number, subtype?: BadgeSubtype) {
     if (index >= MAX_ROW_BADGES) return;
     draft = { page: pageIndex(), index, button: cloneCardConfig(badges()[index] || cardContractDefaultConfig("badge")) };
+    if (subtype) {
+      setBadgeSubtype(draft.button, subtype);
+      draft.button.icon = BADGE_SUBTYPES.find(type => type.key === subtype)!.defaultIcon;
+    }
     renderEditor(); deps.renderPreview();
   }
 
   function renderEditor() {
     if (!draft) return;
-    header("Badge Settings");
+    header(BADGE_SUBTYPES.find(type => type.key === badgeSubtype(draft!.button))!.label + " Badge");
     const current = draft;
     const panel = document.createElement("div"); panel.className = "sp-panel";
     const required: Array<{ input: HTMLInputElement; valid: () => boolean; message: string }> = [];

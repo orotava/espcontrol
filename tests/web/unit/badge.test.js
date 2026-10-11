@@ -2,7 +2,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const { loadTypescriptTest } = require("./helpers/load_typescript_test");
-const { badgeAction, normalizeBadgeConfig } = loadTypescriptTest("src/webserver/model/badge.ts");
+const { BADGE_SUBTYPES, badgeAction, badgeSubtype, setBadgeSubtype, normalizeBadgeConfig } = loadTypescriptTest("src/webserver/model/badge.ts");
 const { configOptionValue } = loadTypescriptTest("src/webserver/model/config_primitives.ts");
 const { serializeBadgeRow, parseBadgeRow, badgeRowSettings, badgeRowsFromSettings } = loadTypescriptTest("src/webserver/model/badge_row.ts");
 const { encodePanelConfig, decodePanelConfig } = loadTypescriptTest("src/webserver/model/panel_config.ts");
@@ -21,6 +21,26 @@ test("badge retains independent display and action targets and a stable page lin
   normalizeBadgeConfig(button);
   assert.equal(configOptionValue(button.options, "badge_page"), "6");
   assert.equal(configOptionValue(button.options, "card_off_color"), "112233");
+});
+
+test("badge subtypes select the correct behaviour without a Label type", () => {
+  assert.deepEqual(BADGE_SUBTYPES.map(type => type.key), ["sensor", "subpage", "switch", "button", "slider", "modal"]);
+  for (const type of BADGE_SUBTYPES) {
+    const button = badge("");
+    setBadgeSubtype(button, type.key);
+    assert.equal(badgeSubtype(button), type.key);
+    const restored = parseBadgeRow(serializeBadgeRow([button]))[0];
+    assert.equal(badgeSubtype(restored), type.key);
+    assert.equal(restored.sensor, "sensor.kitchen");
+  }
+  const legacy = badge("badge_action=toggle");
+  assert.equal(badgeSubtype(legacy), "switch");
+  const staticLegacy = badge(""); staticLegacy.precision = "label";
+  normalizeBadgeConfig(staticLegacy);
+  assert.equal(staticLegacy.precision, "label", "Existing labels remain readable until edited");
+  const momentary = badge("active_color");
+  setBadgeSubtype(momentary, "button");
+  assert(!momentary.options.includes("active_color"), "Momentary buttons do not retain switch colouring");
 });
 
 test("badge drops invalid destinations and falls back to display for unknown actions", () => {

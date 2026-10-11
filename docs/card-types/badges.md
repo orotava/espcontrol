@@ -16,9 +16,10 @@ The row stays one badge high; swipe horizontally if the badges do not all fit.
 
 1. Open the home screen or subpage in the web editor, choose **Badges**, then
    **Add badge**. Each page supports up to eight badges.
-2. Choose an **Icon** and **Display**: **Label** or **Live value**.
-3. Choose an **Interaction** from the table below.
-4. For a live value, choose a **Display Entity**. Optionally select an attribute,
+2. Choose a **Badge Type** from the table below.
+3. Enter its **Entity** or choose its destination **Subpage**, then choose an icon.
+4. For a Sensor, its Entity supplies the reading. For other types showing a
+   live value, choose a **Display Entity**. Optionally select an attribute,
    unit and decimal places. For a Slider, leave Display Entity blank to show
    the slider's own value.
 5. Turn on **Lit When Active** if you want the badge to use the active colour.
@@ -32,15 +33,20 @@ Badge rows require firmware that supports them. They are included in exported
 configuration backups; update older panels before restoring a backup that
 contains rows.
 
-| Interaction | Behaviour |
+| Badge Type | Behaviour |
 | --- | --- |
-| Display only | Shows a label or reading without an action. |
-| Open subpage | Opens the subpage you select. Renaming or moving that Subpage card keeps the link. Deleting it requires choosing a new destination. |
-| Open control modal | Opens a supported control card already configured on this panel, including one inside a subpage. Closing it returns to the current page. |
-| Toggle | Toggles a light, switch, input boolean, or fan. |
+| Sensor | Shows an entity's reading without an action. |
+| Subpage | Opens the subpage you select. Renaming or moving that Subpage card keeps the link. Deleting it requires choosing a new destination. |
+| Modal | Opens a supported control card already configured on this panel, including one inside a subpage. Closing it returns to the current page. |
+| Switch | Toggles a light, switch, input boolean, or fan. |
+| Button | Presses a Home Assistant button or input button. |
 | Slider | Drag horizontally to adjust light brightness, fan speed, media volume, a number, or an input number. Sends the new value when you release. |
 
-The Display Entity can differ from the Control Entity. For example, a badge
+There is no separate Label badge type. Subpage, Switch, Button, Slider and Modal
+badges can show a label; Sensor badges show live data. Existing fixed-text badges
+remain readable, but editing one requires choosing an entity or another type.
+
+The Display Entity can differ from the action's Entity. For example, a badge
 can show a room temperature while opening that room's thermostat modal.
 Numeric helpers use their Home Assistant minimum, maximum and step. Media
 sliders require support for setting volume directly.

@@ -194,6 +194,7 @@ export const CARD_CONTRACT_CARDS: Readonly<Record<string, CardTypeSpec>> = {
           "subpage",
           "modal",
           "toggle",
+          "button",
           "slider"
         ],
         "defaultValue": "display",

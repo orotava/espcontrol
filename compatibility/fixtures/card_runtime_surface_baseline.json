@@ -162,6 +162,38 @@
       }
     },
     {
+      "name": "badge: button",
+      "sourceKind": "contract",
+      "sourceType": "badge",
+      "mode": "button",
+      "canonicalType": "badge",
+      "web": {
+        "registration": "badge",
+        "picker": {
+          "main": false,
+          "subpage": false,
+          "infoOnly": false
+        },
+        "preview": {
+          "available": true,
+          "fingerprint": "394b946a5762b1af"
+        }
+      },
+      "firmware": {
+        "family": "BADGE"
+      },
+      "lifecycle": {
+        "subscriptions": [
+          "state",
+          "attributes"
+        ],
+        "actions": [
+          "home_assistant_service"
+        ],
+        "modalOwner": "none"
+      }
+    },
+    {
       "name": "badge: slider",
       "sourceKind": "contract",
       "sourceType": "badge",

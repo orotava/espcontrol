@@ -70,9 +70,10 @@ inline bool badge_slider_ready(const BadgeCtx *ctx) {
 
 inline void badge_update(BadgeCtx *ctx) {
   if (!ctx) return;
-  const bool control = ctx->action == "toggle" || ctx->action == "slider";
+  const bool control = ctx->action == "toggle" || ctx->action == "button" || ctx->action == "slider";
   const bool available = ctx->action == "slider" ? badge_slider_ready(ctx)
-    : ctx->target_available && espcontrol::badge::toggle_supported(ctx->target);
+    : ctx->target_available && (ctx->action == "button"
+      ? espcontrol::badge::button_supported(ctx->target) : espcontrol::badge::toggle_supported(ctx->target));
   if (control) {
     set_card_disabled_state(ctx->button, !available);
     if (!available) ctx->dragging = false;
@@ -122,6 +123,9 @@ inline void badge_handle_click(BadgeCtx *ctx) {
   if (!ctx || screen_lock_enabled() || alarm_display_takeover_active()) return;
   if (ctx->action == "subpage") badge_open_subpage(ctx->page);
   else if (ctx->action == "modal") espcontrol_open_modal(ctx->target, grid_phase2_complete());
+  else if (ctx->action == "button" && ctx->target_available && espcontrol::badge::button_supported(ctx->target)) {
+    ha_send_entity_action(ctx->target, espcontrol::badge::button_action(ctx->target));
+  }
   else if (ctx->action == "toggle" && ctx->target_available &&
            espcontrol::badge::toggle_supported(ctx->target)) send_toggle_action(ctx->target);
 }
@@ -296,9 +300,10 @@ inline bool badge_driver_bind_data(BtnSlot &slot, const ParsedCfg &, const Conte
       badge_update(ctx);
     });
   }
-  if (!ctx->target.empty() && (ctx->action == "toggle" || ctx->action == "slider")) {
+  if (!ctx->target.empty() && (ctx->action == "toggle" || ctx->action == "button" || ctx->action == "slider")) {
     ha_subscribe_state(ctx->target, [ctx](esphome::StringRef state) {
-      ctx->target_available = !ha_state_unavailable_ref(state);
+      ctx->target_available = ctx->action == "button"
+        ? !ha_entity_state_unavailable_ref(ctx->target, state) : !ha_state_unavailable_ref(state);
       ctx->target_on = is_entity_on_ref(state);
       if (badge_numeric(ctx)) {
         ctx->level_known = ctx->target_available && parse_double_ref(state, ctx->level) && std::isfinite(ctx->level);

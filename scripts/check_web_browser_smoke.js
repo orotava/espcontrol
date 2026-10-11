@@ -6438,7 +6438,7 @@ async function assertBadgeJourney(browser, testCase) {
     assert.strictEqual(await page.locator("#sp-badge-inp-badge-display").inputValue(), "value");
     assert.strictEqual(await page.locator("#sp-badge-inp-entity").inputValue(), "climate.kitchen");
     assert.strictEqual(await page.locator("#sp-badge-inp-sensor").inputValue(), "sensor.kitchen_temperature");
-    await page.locator("#sp-badge-inp-badge-action").selectOption("subpage");
+    await page.locator("#sp-badge-inp-badge-type").selectOption("subpage");
     await page.locator("#sp-badge-inp-badge-page").selectOption("3");
     await dialog.getByRole("button", { name: "Save", exact: true }).click();
     await dialog.waitFor({ state: "hidden" });
@@ -6457,11 +6457,51 @@ async function assertBadgeJourney(browser, testCase) {
     await page.locator('.sp-main [data-slot="3"] .sp-subpage-badge').click();
     await page.getByRole("button", { name: "Badges", exact: true }).click();
     await dialog.getByRole("button", { name: "Add badge", exact: true }).click();
+    assert.equal(await dialog.locator('[data-badge-type="label"]').count(), 0);
+    assert.equal(await dialog.locator('[data-badge-type]').count(), 6);
+    if (process.env.ESPCONTROL_BADGE_TYPE_SCREENSHOT) await dialog.locator(".sp-settings-modal").screenshot({ path: process.env.ESPCONTROL_BADGE_TYPE_SCREENSHOT });
+    await dialog.locator('[data-badge-type="subpage"]').click();
+    await page.locator("#sp-badge-inp-badge-page").selectOption("3");
     await page.locator("#sp-badge-inp-label").fill("Upstairs");
     await dialog.getByRole("button", { name: "Save", exact: true }).click();
     await dialog.waitFor({ state: "hidden" });
     assert.equal(parseBadgeRow(nativeState.document.settings.badge_row_3)[0].label, "Upstairs");
     assert.equal(await page.locator(".sp-badge-row .sp-badge-card").count(), 1);
+    // Exercise actual entity entry from a new badge, with a grid card already
+    // selected. Typing or choosing suggestions must not reset the badge editor.
+    await page.locator('.sp-main [data-slot="1"]').click();
+    async function addTypedBadge(type) {
+      await page.getByRole("button", { name: "Badges", exact: true }).click();
+      await dialog.getByRole("button", { name: "Add badge", exact: true }).click();
+      await dialog.locator(`[data-badge-type="${type}"]`).click();
+      assert.equal(await page.locator("#sp-badge-inp-badge-type").inputValue(), type);
+    }
+    await addTypedBadge("sensor");
+    await page.locator("#sp-badge-inp-sensor").pressSequentially("sensor.office_temperature");
+    assert.equal(await page.locator("#sp-badge-inp-sensor").inputValue(), "sensor.office_temperature");
+    if (process.env.ESPCONTROL_BADGE_SETTINGS_SCREENSHOT) await dialog.locator(".sp-settings-modal").screenshot({ path: process.env.ESPCONTROL_BADGE_SETTINGS_SCREENSHOT });
+    await dialog.getByRole("button", { name: "Save", exact: true }).click();
+    await dialog.waitFor({ state: "hidden" });
+    assert.equal(parseBadgeRow(nativeState.document.settings.badge_row_3)[1].sensor, "sensor.office_temperature");
+    await addTypedBadge("switch");
+    await page.locator("#sp-badge-inp-entity").fill("light.");
+    await dialog.locator(".sp-entity-option").filter({ hasText: /^light\.kitchen$/ }).click();
+    assert.equal(await page.locator("#sp-badge-inp-entity").inputValue(), "light.kitchen");
+    await page.locator("#sp-badge-inp-label").fill("Kitchen switch");
+    await dialog.getByRole("button", { name: "Save", exact: true }).click();
+    await dialog.waitFor({ state: "hidden" });
+    assert.equal(parseBadgeRow(nativeState.document.settings.badge_row_3)[2].entity, "light.kitchen");
+    await addTypedBadge("button");
+    await page.locator("#sp-badge-inp-entity").fill("input_button.evening_scene");
+    await dialog.getByRole("button", { name: "Save", exact: true }).click();
+    await dialog.waitFor({ state: "hidden" });
+    assert.equal(parseBadgeRow(nativeState.document.settings.badge_row_3)[3].entity, "input_button.evening_scene");
+    assert(parseBadgeRow(nativeState.document.settings.badge_row_3)[3].options.includes("badge_action=button"));
+    await addTypedBadge("slider");
+    await page.locator("#sp-badge-inp-entity").pressSequentially("number.kitchen_target");
+    await dialog.getByRole("button", { name: "Save", exact: true }).click();
+    await dialog.waitFor({ state: "hidden" });
+    assert.equal(parseBadgeRow(nativeState.document.settings.badge_row_3)[4].entity, "number.kitchen_target");
     await page.locator(".sp-back-btn .sp-back-hit").click();
     assert.equal(await page.locator(".sp-badge-row .sp-badge-card").count(), 5);
     // Export retains both page rows. A browser reload reads them from the native document.
@@ -6478,9 +6518,11 @@ async function assertBadgeJourney(browser, testCase) {
     await seedNativeDocument(page, nativeState);
     await page.waitForFunction(() => document.querySelectorAll(".sp-badge-row .sp-badge-card").length === 5);
     await page.locator('.sp-main [data-slot="3"] .sp-subpage-badge').click();
-    await page.locator('.sp-badge-row [data-badge-index="0"]').click();
-    await dialog.getByRole("button", { name: "Delete", exact: true }).click();
-    await dialog.waitFor({ state: "hidden" });
+    for (let remaining = 5; remaining > 0; remaining--) {
+      await page.locator('.sp-badge-row [data-badge-index="0"]').click();
+      await dialog.getByRole("button", { name: "Delete", exact: true }).click();
+      await dialog.waitFor({ state: "hidden" });
+    }
     assert(!nativeState.document.settings.badge_row_3, "Deleting the last badge removes the row record");
     assert(!(await page.locator(".sp-screen").getAttribute("class")).includes("sp-has-badge-row"));
     await page.locator(".sp-back-btn .sp-back-hit").click();

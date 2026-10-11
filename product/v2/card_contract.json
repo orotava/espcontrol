@@ -189,6 +189,7 @@
             "subpage",
             "modal",
             "toggle",
+            "button",
             "slider"
           ],
           "defaultValue": "display",
