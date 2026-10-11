@@ -8,6 +8,7 @@ import { iconSlug } from "../application/ui_primitives";
 export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiServices): void {
   registry.register("badge", {
     label: "Badge",
+    isAvailable: () => false,
     allowInSubpage: true,
     hideLabel: true,
     cardMetadata: { preview: { badge: "label" } },
@@ -17,6 +18,7 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
       Object.assign(button, cardContractDefaultConfig("badge"));
     },
     renderSettings(panel, button, _slot, helpers) {
+      const rerender = () => helpers.renderBadgeSettings ? helpers.renderBadgeSettings() : cardUi.renderButtonSettings();
       const settings = helpers.disclosureSection("Badge Settings", helpers.idPrefix + "badge-settings", true);
       panel.appendChild(settings.panel);
       panel = settings.section;
@@ -44,7 +46,7 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
       function option(key: string, value: string, rerender = false) {
         button.options = setConfigOptionValue(button.options, key, value);
         helpers.saveField("options", button.options);
-        if (rerender) cardUi.renderButtonSettings();
+        if (rerender) helpers.renderBadgeSettings ? helpers.renderBadgeSettings() : cardUi.renderButtonSettings();
       }
       function text(label: string, field: string, placeholder: string, domains?: string[], required = false) {
         const wrapper = document.createElement("div");
@@ -63,7 +65,7 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
       select("Display", "badge-display", button.precision || "label", [["label", "Label"], ["value", "Live value"]], value => {
         button.precision = value;
         helpers.saveField("precision", value);
-        cardUi.renderButtonSettings();
+        rerender();
       });
       if (button.precision !== "value") text("Label", "label", "e.g. Kitchen");
       select("Interaction", "badge-action", action, [["display", "Display only"], ["subpage", "Open subpage"], ["modal", "Open control modal"], ["toggle", "Toggle"], ["slider", "Slider"]], value => option("badge_action", value, true));

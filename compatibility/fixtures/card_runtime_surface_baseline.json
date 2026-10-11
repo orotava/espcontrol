@@ -10,8 +10,8 @@
       "web": {
         "registration": "badge",
         "picker": {
-          "main": true,
-          "subpage": true,
+          "main": false,
+          "subpage": false,
           "infoOnly": false
         },
         "preview": {
@@ -42,8 +42,8 @@
       "web": {
         "registration": "badge",
         "picker": {
-          "main": true,
-          "subpage": true,
+          "main": false,
+          "subpage": false,
           "infoOnly": false
         },
         "preview": {
@@ -74,8 +74,8 @@
       "web": {
         "registration": "badge",
         "picker": {
-          "main": true,
-          "subpage": true,
+          "main": false,
+          "subpage": false,
           "infoOnly": false
         },
         "preview": {
@@ -106,8 +106,8 @@
       "web": {
         "registration": "badge",
         "picker": {
-          "main": true,
-          "subpage": true,
+          "main": false,
+          "subpage": false,
           "infoOnly": false
         },
         "preview": {
@@ -138,8 +138,8 @@
       "web": {
         "registration": "badge",
         "picker": {
-          "main": true,
-          "subpage": true,
+          "main": false,
+          "subpage": false,
           "infoOnly": false
         },
         "preview": {
@@ -170,8 +170,8 @@
       "web": {
         "registration": "badge",
         "picker": {
-          "main": true,
-          "subpage": true,
+          "main": false,
+          "subpage": false,
           "infoOnly": false
         },
         "preview": {

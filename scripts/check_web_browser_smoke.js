@@ -12,12 +12,14 @@ const { freshWebOutputDir } = require("./web_source");
 const ROOT = path.resolve(__dirname, "..");
 const {
   createPanelConfigBackupPayload,
+  decodePanelConfigBackupPayload,
   decodePanelConfig,
   encodePanelConfig,
 } = loadTypeScriptModule(path.join(ROOT, "src", "webserver", "model", "index.ts"));
 const MANIFEST_PATH = path.join(ROOT, "devices", "manifest.json");
 const WEB_OUTPUT_DIR = freshWebOutputDir();
 const FAILURE_DIR = path.join(ROOT, ".cache", "web-browser-smoke");
+const { serializeBadgeRow, parseBadgeRow } = loadTypeScriptModule(path.join(ROOT, "src/webserver/model/badge_row.ts"));
 
 function readManifest() {
   return JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf8"));
@@ -312,7 +314,7 @@ async function installRoutes(context, slug, options = {}) {
           api: { version: 1 },
           reset: options.resetState ? { modes: ["customization", "factory"], status: "/api/v1/reset" } : undefined,
           identity: options.identityState ? { version: 1 } : undefined,
-          configuration: { read: true, write: true, document_versions: [1] },
+          configuration: { read: true, write: true, document_versions: [1], badge_rows: !!options.badgeRows },
           web_assets: { versions: [1] },
         }),
       });
@@ -6381,8 +6383,18 @@ async function assertPanelNaming(browser) {
 
 async function assertBadgeJourney(browser, testCase) {
   const context = await browser.newContext({ viewport: testCase.viewport });
-  const saved = {};
-  await installRoutes(context, testCase.slug, { legacyTextState: saved });
+  const nativeState = nativeConfigState(testCase.slug);
+  const badge = (label, options = "", extra = {}) => ({ entity: "", label, icon: "Home", icon_on: "Auto", sensor: "", unit: "", type: "badge", precision: "label", options, ...extra });
+  nativeState.document.settings.badge_row_0 = serializeBadgeRow([
+    badge("Kitchen", "badge_action=modal", { entity: "climate.kitchen", sensor: "sensor.kitchen_temperature", precision: "value", icon: "Thermometer", unit: "°C" }),
+    badge("Kitchen", "badge_action=subpage,badge_page=3"),
+    badge("Volume", "badge_action=slider", { entity: "media_player.kitchen", precision: "value", icon: "Volume High" }),
+    badge("Lights", "badge_action=toggle,active_color", { entity: "light.kitchen", icon: "Lightbulb" }),
+    badge("2 open", "", { icon: "Window Open" }),
+  ]);
+  const originalButtons = JSON.stringify(nativeState.document.buttons);
+  const originalOrder = nativeState.document.settings.button_order;
+  await installRoutes(context, testCase.slug, { nativeState, badgeRows: true });
   const page = await context.newPage();
   const errors = [];
   page.on("pageerror", error => errors.push(error.message));
@@ -6391,46 +6403,104 @@ async function assertBadgeJourney(browser, testCase) {
     await page.goto(`http://espcontrol.test/${testCase.slug}?events=1`, { waitUntil: "domcontentloaded" });
     await page.waitForSelector("#sp-app");
     await page.waitForFunction(() => window.__eventSources?.length > 0);
-    const events = seededEvents().filter(event => !/^text-button_[1-5]_config$/.test(event.id));
-    events.push({ id: "text-button_6_config", state: ";Kitchen controls;Home;Auto;;;subpage" });
-    [
-      "climate.kitchen;Kitchen;Thermometer;Auto;sensor.kitchen_temperature;°C;badge;value;badge_action=modal",
-      ";Kitchen;Home;Auto;;;badge;label;badge_action=subpage,badge_page=6",
-      "media_player.kitchen;Volume;Volume High;Auto;;;badge;value;badge_action=slider",
-      "light.kitchen;Lights;Lightbulb;Auto;;;badge;label;badge_action=toggle,active_color",
-      ";2 open;Window Open;Auto;;;badge;label;",
-    ].forEach((state, index) => events.push({ id: `text-button_${index + 1}_config`, state }));
-    await page.evaluate(events => window.__seedEspState(events), events);
-    await page.waitForFunction(() => document.querySelectorAll(".sp-main .sp-badge-card").length === 5);
+    await seedNativeDocument(page, nativeState);
+    await page.waitForFunction(() => document.querySelectorAll(".sp-badge-row .sp-badge-card").length === 5);
+    assert.strictEqual(await page.locator(".sp-main .sp-badge-card").count(), 0, "Badges never occupy card slots");
+    const gridCount = await page.locator(".sp-main [data-pos]").count();
     assert.strictEqual(await page.locator(".sp-badge-slider .sp-badge-fill").count(), 1);
-    const geometry = await page.locator('.sp-main [data-slot="1"]').evaluate(badge => {
+    const geometry = await page.locator('.sp-badge-row [data-badge-index="0"]').evaluate(badge => {
       const bounds = badge.getBoundingClientRect();
       const text = badge.querySelector(".sp-badge-text");
       const icon = badge.querySelector(".mdi");
       return { width: bounds.width, height: bounds.height, textHeight: text.getBoundingClientRect().height,
         aligned: Math.abs(text.getBoundingClientRect().top - icon.getBoundingClientRect().top) < bounds.height / 2,
-        overflowing: text.scrollWidth > text.clientWidth };
+        overflowing: text.scrollWidth > text.clientWidth,
+        aboveGrid: bounds.bottom <= document.querySelector(".sp-main").getBoundingClientRect().top };
     });
     assert(geometry.height < geometry.width && geometry.height > geometry.textHeight, "Badge is a compact horizontal pill with visible text");
     assert(geometry.aligned && !geometry.overflowing, "Badge icon and value fit side by side");
+    assert(geometry.aboveGrid, "The short row sits above the full card grid");
     if (process.env.ESPCONTROL_BADGE_SCREENSHOT) await page.locator(".sp-screen").screenshot({ path: process.env.ESPCONTROL_BADGE_SCREENSHOT });
-    await page.locator('.sp-main [data-slot="1"]').click();
-    await page.getByRole("button", { name: "Edit", exact: true }).click();
-    await page.waitForSelector(".sp-settings-modal");
-    const cardSettings = page.locator(".sp-settings-modal .sp-disclosure").filter({ hasText: "Card Settings" }).first();
-    if (await cardSettings.count() && !(await cardSettings.getAttribute("class")).includes("sp-open")) await cardSettings.locator(".sp-disclosure-button").first().click();
-    assert.strictEqual(await page.locator("#sp-inp-badge-display").inputValue(), "value");
-    assert.strictEqual(await page.locator("#sp-inp-entity").inputValue(), "climate.kitchen");
-    assert.strictEqual(await page.locator("#sp-inp-sensor").inputValue(), "sensor.kitchen_temperature");
-    await page.locator("#sp-inp-badge-action").selectOption("subpage");
-    await page.locator("#sp-inp-badge-page").selectOption("6");
-    await page.locator(".sp-settings-modal .sp-save-btn").click();
-    await page.waitForSelector(".sp-settings-modal", { state: "hidden" });
-    await page.waitForFunction(() => document.querySelector('.sp-main [data-slot="1"]')?.classList.contains("sp-badge-card"));
-    await page.waitForTimeout(250);
-    const written = Object.values(saved).find(value => value.includes("sensor.kitchen_temperature") && value.includes("badge_action=subpage"));
-    assert(written && written.includes("badge_page=6"), "Saving preserves the independent display source and selected subpage");
+    const dialog = page.locator(".sp-badge-settings-overlay");
+    await page.locator('.sp-badge-row [data-badge-index="0"]').click();
+    assert.strictEqual(await page.locator("#sp-badge-inp-badge-display").inputValue(), "value");
+    assert.strictEqual(await page.locator("#sp-badge-inp-entity").inputValue(), "climate.kitchen");
+    assert.strictEqual(await page.locator("#sp-badge-inp-sensor").inputValue(), "sensor.kitchen_temperature");
+    await page.locator("#sp-badge-inp-badge-action").selectOption("subpage");
+    await page.locator("#sp-badge-inp-badge-page").selectOption("3");
+    await dialog.getByRole("button", { name: "Save", exact: true }).click();
+    await dialog.waitFor({ state: "hidden" });
+    const written = parseBadgeRow(nativeState.document.settings.badge_row_0)[0];
+    assert.equal(written.sensor, "sensor.kitchen_temperature");
+    assert(written.options.includes("badge_page=3"));
+    assert.equal(JSON.stringify(nativeState.document.buttons), originalButtons);
+    assert.equal(nativeState.document.settings.button_order, originalOrder);
+    assert.equal(await page.locator(".sp-main [data-pos]").count(), gridCount, "Adding a row preserves every grid cell");
+    // Row order is independent of card order.
+    await page.locator('.sp-badge-row [data-badge-index="4"]').click();
+    await dialog.getByRole("button", { name: "Move left", exact: true }).click();
+    await dialog.waitFor({ state: "hidden" });
+    assert.equal(parseBadgeRow(nativeState.document.settings.badge_row_0)[3].label, "2 open");
+    // A subpage gets its own row without changing its Back card or card list.
+    await page.locator('.sp-main [data-slot="3"] .sp-subpage-badge').click();
+    await page.getByRole("button", { name: "Badges", exact: true }).click();
+    await dialog.getByRole("button", { name: "Add badge", exact: true }).click();
+    await page.locator("#sp-badge-inp-label").fill("Upstairs");
+    await dialog.getByRole("button", { name: "Save", exact: true }).click();
+    await dialog.waitFor({ state: "hidden" });
+    assert.equal(parseBadgeRow(nativeState.document.settings.badge_row_3)[0].label, "Upstairs");
+    assert.equal(await page.locator(".sp-badge-row .sp-badge-card").count(), 1);
+    await page.locator(".sp-back-btn .sp-back-hit").click();
+    assert.equal(await page.locator(".sp-badge-row .sp-badge-card").count(), 5);
+    // Export retains both page rows. A browser reload reads them from the native document.
+    await openBackupControls(page);
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Export", exact: true }).click();
+    const download = await downloadPromise;
+    const exported = JSON.parse(fs.readFileSync(await download.path(), "utf8"));
+    const exportedNative = decodePanelConfig(decodePanelConfigBackupPayload(exported.native_config));
+    assert.equal(exportedNative.settings.badge_row_0, nativeState.document.settings.badge_row_0);
+    assert.equal(exportedNative.settings.badge_row_3, nativeState.document.settings.badge_row_3);
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForFunction(() => window.__eventSources?.length > 0);
+    await seedNativeDocument(page, nativeState);
+    await page.waitForFunction(() => document.querySelectorAll(".sp-badge-row .sp-badge-card").length === 5);
+    await page.locator('.sp-main [data-slot="3"] .sp-subpage-badge').click();
+    await page.locator('.sp-badge-row [data-badge-index="0"]').click();
+    await dialog.getByRole("button", { name: "Delete", exact: true }).click();
+    await dialog.waitFor({ state: "hidden" });
+    assert(!nativeState.document.settings.badge_row_3, "Deleting the last badge removes the row record");
+    assert(!(await page.locator(".sp-screen").getAttribute("class")).includes("sp-has-badge-row"));
+    await page.locator(".sp-back-btn .sp-back-hit").click();
+    await importBackup(page, exported, "badge-row-restore");
+    await waitForNativeState(nativeState, () => !!nativeState.document.settings.badge_row_3, "Badge row backup restore");
+    assert.deepEqual(nativeState.document.buttons, exportedNative.buttons, "Restoring rows retains the exported cards");
+    await page.locator("#sp-app .sp-tab").filter({ hasText: /^Screen$/ }).click();
+    // Row-only badges are absent from the card type picker.
+    await page.locator(".sp-main .sp-empty-cell").first().click();
+    assert.equal(await page.locator('[data-card-type="badge"]').count(), 0);
     assert.deepStrictEqual(errors, [], "Badge settings and save have no browser errors");
+    // Older native firmware must reject a row backup instead of silently
+    // accepting settings that it cannot display.
+    await page.route("**/api/v1/capabilities", route => route.fulfill({ status: 200, contentType: "application/json",
+      body: JSON.stringify({ configuration: { read: true, write: true, document_versions: [1] } }) }));
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForFunction(() => window.__eventSources?.length > 0);
+    await seedNativeDocument(page, nativeState);
+    const puts = nativeState.puts.length;
+    await importBackup(page, exported, "badge-unsupported-restore");
+    await page.getByText("This backup includes badge rows. Update the panel firmware before restoring it.", { exact: true }).waitFor();
+    assert.equal(nativeState.puts.length, puts);
+    await page.route("**/api/v1/capabilities", route => route.fulfill({ status: 200, contentType: "application/json",
+      body: JSON.stringify({ configuration: { read: true, write: true, document_versions: [1], badge_rows: true } }) }));
+    await page.route("**/api/v1/config", route => route.fulfill({ status: 503, body: "Unavailable" }));
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForFunction(() => window.__eventSources?.length > 0);
+    await seedNativeDocument(page, nativeState);
+    await openBackupControls(page);
+    await page.getByRole("button", { name: "Export", exact: true }).click();
+    await page.getByText("Could not load badge rows for the backup. Reload and try exporting again.", { exact: true }).waitFor();
+    assert.deepStrictEqual(errors, [], "Failed row loading and incompatible firmware cause no browser errors");
   } finally { await context.close(); }
 }
 

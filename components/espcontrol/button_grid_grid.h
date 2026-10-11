@@ -233,6 +233,7 @@ inline TransientStatusLabel *grid_delete_transient_status_label_with_owner(
     lv_obj_t *owner, TransientStatusLabel *ctx);
 
 #include "button_grid_badge_driver.h"
+#include "button_grid_badge_row.h"
 #include "button_grid_status_entity_driver.h"
 
 inline lv_coord_t large_sensor_unit_offset_px(const lv_font_t *large_font, int percent) {
@@ -1230,7 +1231,7 @@ inline bool grid_refresh_subpage_layouts(
       optional_text_state(sp_ext5_configs, si) +
       optional_text_state(sp_ext6_configs, si) +
       optional_text_state(sp_ext7_configs, si);
-    if (sp_cfg.empty()) continue;
+    if (sp_cfg.empty() && espcontrol::badge::configuration().page(si + 1).empty()) continue;
 
     NavigationSubpageEntry *entry = navigation_find_slot(si + 1);
     const auto sp_btns = parse_subpage_config(sp_cfg);
@@ -1953,6 +1954,7 @@ inline void grid_phase2(
   set_current_button_primary_color(palette.on_val);
 
   OrderResult parsed, order;
+  badge_row_build(main_page_obj, 0, cfg, palette, slots[0]);
   parse_order_string(order_str, NS, parsed);
   clear_spanned_cells(parsed, NS, COLS, order);
   lv_obj_t *first_card = nullptr;
@@ -2068,7 +2070,7 @@ inline void grid_phase2(
   const lv_font_t *sp_btn_fnt = lv_obj_get_style_text_font(ref_btn, LV_PART_MAIN);
   lv_color_t sp_txt_color = lv_obj_get_style_text_color(ref_btn, LV_PART_MAIN);
 
-  lv_coord_t mp_pad_top = lv_obj_get_style_pad_top(main_page_obj, LV_PART_MAIN);
+  lv_coord_t mp_pad_top = lv_obj_get_style_pad_top(main_page_obj, LV_PART_MAIN) - page_badge_row_inset(main_page_obj);
   lv_coord_t mp_pad_bottom = lv_obj_get_style_pad_bottom(main_page_obj, LV_PART_MAIN);
   lv_coord_t mp_pad_left = lv_obj_get_style_pad_left(main_page_obj, LV_PART_MAIN);
   lv_coord_t mp_pad_right = lv_obj_get_style_pad_right(main_page_obj, LV_PART_MAIN);
@@ -2088,7 +2090,7 @@ inline void grid_phase2(
       optional_text_state(sp_ext5_configs, si) +
       optional_text_state(sp_ext6_configs, si) +
       optional_text_state(sp_ext7_configs, si);
-    if (sp_cfg.empty()) continue;
+    if (sp_cfg.empty() && espcontrol::badge::configuration().page(si + 1).empty()) continue;
 
     auto sp_btns = parse_subpage_config(sp_cfg);
     std::string sp_order_str = get_subpage_order(sp_cfg);
@@ -2146,6 +2148,7 @@ inline void grid_phase2(
     }, LV_EVENT_CLICKED, main_page_obj);
     screen_lock_register_controlled_button(back_btn);
     navigation_register_subpage_back_button(si + 1, back_slot);
+    badge_row_build(sub_scr, si + 1, cfg, palette, back_slot);
 
     auto add_parent_indicator = [&](const std::string &entity_id,
                                     bool (*is_active_state)(esphome::StringRef) = is_entity_on_ref) {

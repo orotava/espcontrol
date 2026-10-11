@@ -25,6 +25,7 @@ import type { GridFeature } from "./grid";
 import type { ButtonSettingsSelectionFeature } from "./button_settings_selection";
 
 export interface PreviewRenderDependencies {
+    readonly renderBadgeRow?: () => void;
     readonly updateClockBarItemUi: () => void;
     readonly document: Document;
     readonly layout: ApplicationLayoutState;
@@ -98,6 +99,7 @@ export function createPreviewRenderFeature(dependencies: PreviewRenderDependenci
         const previewColors = PREVIEW_THEME_COLORS[previewEffectiveTheme(state)];
         dependencies.updateClockBarItemUi();
         var main: any = els.previewMain;
+        dependencies.renderBadgeRow?.();
         main.innerHTML = "";
         main.className = "sp-main" + (state.subpageChevronsOn ? "" : " sp-hide-subpage-chevrons");
         if (gridPreviewBlockedByRotationStartup()) {

@@ -61,6 +61,7 @@ import { createSettingsSystemSectionFeature } from "./application/settings_syste
 import { createSettingsPageFeature, type SettingsPageFeature } from "./application/settings_page";
 import { createControlsFieldsFeature, type ControlsFieldsFeature } from "./application/controls_fields";
 import { createPreviewRenderFeature, type PreviewRenderFeature } from "./application/preview_render";
+import { createBadgeRowFeature, type BadgeRowFeature } from "./application/badge_row";
 import { createButtonSettingsSelectionFeature, type ButtonSettingsSelectionFeature } from "./application/button_settings_selection";
 import { createButtonSettingsRenderQueueFeature } from "./application/button_settings_render_queue";
 import { createButtonSettingsIconPickerFeature } from "./application/button_settings_icon_picker";
@@ -380,6 +381,7 @@ function composeApplicationContext(): ApplicationContext {
     normalizeHexColor: (value, fallback) => Model.normalizeHexColor(value, fallback),
     showBanner: shell.showBanner,
     delay: (callback, milliseconds) => dom.schedule(callback, milliseconds),
+    onBadgeRowRemoved: slot => { delete state.badgeRows[String(slot)]; preview.render(); },
   }, dom.fetch);
   const configurationPersistence = createConfigPersistenceFeature(nativePanelConfig, runtime, layout, entityState, shell);
   const cards = createCardRegistry();
@@ -608,7 +610,9 @@ function composeApplicationContext(): ApplicationContext {
       openVoiceServicesSettings: () => settingsHelpers.openVoiceServicesSettings(),
     },
   );
+  let badgeRows: BadgeRowFeature;
   preview = createPreviewRenderFeature({
+    renderBadgeRow: () => badgeRows?.render(),
     updateClockBarItemUi: () => statusPreview.updateClockBarItemUi(),
     document: dom.document,
     layout,
@@ -620,6 +624,11 @@ function composeApplicationContext(): ApplicationContext {
     shell,
     grid,
     selection,
+  });
+  badgeRows = createBadgeRowFeature({
+    document: dom.document, runtime, cards, native: nativePanelConfig,
+    deviceProfile: layout.deviceId, fields, iconPicker, entities: entityState, shell,
+    renderPreview: () => preview.render(),
   });
   const clipboard = createPreviewClipboardFeature({
     configPersistence: configurationPersistence,
@@ -821,6 +830,7 @@ function composeApplicationContext(): ApplicationContext {
     normalizeImportedPanelSettings,
     gridColsForImportedSettings,
     nativePanelConfig,
+    loadBadgeRows: () => badgeRows.load(),
     codec: configurationCodec,
     configPersistence: configurationPersistence,
     backupContract,
@@ -844,8 +854,7 @@ function composeApplicationContext(): ApplicationContext {
   });
   const reconnect = createReconnectController<unknown>({
     eventStreamEnabled: stateLoader.eventStreamEnabled,
-    loadInitialState: (handleState, markConnected) =>
-      stateLoader.loadInitialState(handleState, markConnected),
+    loadInitialState: (handleState, markConnected) => stateLoader.loadInitialState(handleState, markConnected),
     createEventSource: dom.createEventSource,
     getActiveSource: () => runtime.eventSource,
     setActiveSource: (source) => { runtime.eventSource = source; },
@@ -864,6 +873,7 @@ function composeApplicationContext(): ApplicationContext {
     shell,
     stateLoader,
     gridMigration,
+    () => { void badgeRows.load(); },
   );
   publicFirmwareInstall = createPublicFirmwareInstallFeature(
     deviceApi,

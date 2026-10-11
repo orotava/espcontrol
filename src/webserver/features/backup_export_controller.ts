@@ -12,6 +12,7 @@ export interface BackupNativeConfigSource {
   readonly subpages: Readonly<Record<string, unknown>>;
   readonly buttonOrder?: string;
   readonly buttonOnColor?: string;
+  readonly badgeRowSettings?: Readonly<Record<string, string>>;
 }
 
 export interface BackupExportControllerOptions {
@@ -76,6 +77,7 @@ export function createBackupExportController(
       buttons,
       subpages,
       settings: {
+        ...source.badgeRowSettings,
         button_order: source.buttonOrder || backup.button_order || "",
         button_on_color: source.buttonOnColor || backup.button_on_color || "",
       },

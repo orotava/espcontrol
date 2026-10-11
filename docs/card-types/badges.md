@@ -1,5 +1,5 @@
 ---
-title: Badge Cards
+title: Badge Rows
 description: Compact icon-and-label or live-value controls for EspControl.
 ---
 
@@ -7,19 +7,30 @@ description: Compact icon-and-label or live-value controls for EspControl.
 
 A Badge shows one icon beside a label or live value in a rounded pill. Use it
 for a room shortcut, temperature reading, light switch, or compact slider.
-Badges work on the home screen and inside subpages and occupy the usual grid
-slots. They do not add a separate badge row. Wide cards give longer names more
-space; taller sizes keep the pill centred in the allocated space.
+Each page has its own optional, short badge row above the existing card grid.
+Badges have a separate list and do not occupy card slots. Adding a row reduces
+the height of the grid while keeping its columns, card count and positions.
+The row stays one badge high; swipe horizontally if the badges do not all fit.
 
 ## Set Up a Badge
 
-1. Add a card and choose **Badge**.
+1. Open the home screen or subpage in the web editor, choose **Badges**, then
+   **Add badge**. Each page supports up to eight badges.
 2. Choose an **Icon** and **Display**: **Label** or **Live value**.
 3. Choose an **Interaction** from the table below.
 4. For a live value, choose a **Display Entity**. Optionally select an attribute,
    unit and decimal places. For a Slider, leave Display Entity blank to show
    the slider's own value.
 5. Turn on **Lit When Active** if you want the badge to use the active colour.
+
+Click a badge in the preview to edit it. Use **Move left**, **Move right**, or
+**Delete** in its settings to manage the row. **Save** writes badge settings
+independently of card settings. Deleting the last badge removes the row and
+returns its height to the grid.
+
+Badge rows require firmware that supports them. They are included in exported
+configuration backups; update older panels before restoring a backup that
+contains rows.
 
 | Interaction | Behaviour |
 | --- | --- |
