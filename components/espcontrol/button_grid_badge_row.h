@@ -27,7 +27,8 @@ inline void badge_row_build(lv_obj_t *page, int page_index,
   const lv_coord_t line = font ? font->line_height : 24;
   const lv_coord_t height = line * 2;
   const lv_coord_t vertical_gap = line / 3;
-  const lv_coord_t inset = height + vertical_gap * 2;
+  const lv_coord_t bottom_gap = vertical_gap * 2;
+  const lv_coord_t inset = height + vertical_gap + bottom_gap;
   const lv_coord_t top = lv_obj_get_style_pad_top(page, LV_PART_MAIN);
   lv_obj_t *row = lv_obj_create(page);
   lv_obj_remove_style_all(row);
