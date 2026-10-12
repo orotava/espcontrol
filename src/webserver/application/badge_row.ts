@@ -18,6 +18,7 @@ import type { UiRuntimeState } from "./state";
 import type { ApplicationLayoutState } from "./application_context";
 import type { ConfigCodecFeature } from "./config_codec";
 import type { RuntimeSubpage } from "../state/types";
+import type { BadgeContextMenuActions, PreviewContextMenuFeature } from "./preview_context_menu";
 import { badgeAction } from "../model/badge";
 import { configOptionValue, setConfigOptionValue } from "../model/config_primitives";
 
@@ -37,6 +38,8 @@ export function createBadgeRowFeature(deps: {
   codec: Pick<ConfigCodecFeature, "serializeButtonConfig" | "serializeSubpageConfig" | "buildSubpageGrid" | "enterSubpage">;
   fields: ControlsFieldsFeature; iconPicker: ButtonSettingsIconPickerFeature;
   entities: Pick<EntityStateFeature, "entityInput">;
+  contextMenu: Pick<PreviewContextMenuFeature, "showBadge">;
+  showCopyCode(button: CardConfig): void;
   shell: Pick<ControlsShellFeature, "isConfigLocked" | "showBanner" | "createActionButton">;
   renderPreview(): void;
   prepareBadgeSelection(): void;
@@ -49,6 +52,7 @@ export function createBadgeRowFeature(deps: {
   let config: HTMLElement | null = null;
   let draft: { page: number; index: number; button: CardConfig } | null = null;
   let selectedBadge: { page: number; index: number } | null = null;
+  let badgeClipboard: CardConfig | null = null;
   let saving = false;
   let badgesHidden = false;
   let draggedIndex = -1;
@@ -116,6 +120,21 @@ export function createBadgeRowFeature(deps: {
       item.draggable = !saving && !shell.isConfigLocked();
       item.disabled = saving || shell.isConfigLocked();
       bindDrag(item, index);
+      item.addEventListener("contextmenu", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        selectBadge(index);
+        const actions: BadgeContextMenuActions = {
+          edit: () => edit(index),
+          duplicate: () => duplicateBadge(index),
+          copy: () => { badgeClipboard = cloneBadgeForClipboard(badges()[index]!); },
+          copyCode: () => deps.showCopyCode(cloneBadgeForClipboard(config)),
+          cut: () => cutBadge(index),
+          delete: () => deleteBadge(index),
+          ...(badgeClipboard ? { paste: () => pasteBadge(index + 1) } : {}),
+        };
+        deps.contextMenu.showBadge(event, actions);
+      });
       group.appendChild(item);
     });
     const add = button("", addBadge, "sp-btn sp-badge-add", "plus", "Add badge");
@@ -228,6 +247,48 @@ export function createBadgeRowFeature(deps: {
     const [removed] = next.splice(selected.index, 1);
     selectedBadge = null;
     void save(next, selected.page, false, orphanBadgePage(removed!, next, selected.page));
+  }
+
+  function deleteBadge(index: number) {
+    selectedBadge = { page: pageIndex(), index };
+    deleteSelectedBadge();
+  }
+
+  function cloneBadgeForClipboard(source: CardConfig): CardConfig {
+    const copy = cloneCardConfig(source);
+    if (badgeAction(copy) === "subpage") copy.options = setConfigOptionValue(copy.options, "badge_page", "");
+    return copy;
+  }
+
+  function duplicateBadge(index: number) {
+    const page = pageIndex();
+    const next = badges(page).map(cloneCardConfig);
+    if (next.length >= MAX_ROW_BADGES) {
+      shell.showBanner("The badge row is full.", "error");
+      return;
+    }
+    next.splice(index + 1, 0, cloneCardConfig(next[index]!));
+    selectedBadge = { page, index: index + 1 };
+    void save(next, page, false);
+  }
+
+  function cutBadge(index: number) {
+    badgeClipboard = cloneBadgeForClipboard(badges()[index]!);
+    deleteBadge(index);
+  }
+
+  function pasteBadge(index: number) {
+    if (!badgeClipboard) return;
+    const page = pageIndex();
+    const next = badges(page).map(cloneCardConfig);
+    if (next.length >= MAX_ROW_BADGES) {
+      shell.showBanner("The badge row is full.", "error");
+      return;
+    }
+    const destination = Math.max(0, Math.min(index, next.length));
+    next.splice(destination, 0, cloneCardConfig(badgeClipboard));
+    selectedBadge = { page, index: destination };
+    void save(next, page, false);
   }
 
   function orphanBadgePage(removed: CardConfig, nextRow: CardConfig[], page: number) {
@@ -352,6 +413,15 @@ export function createBadgeRowFeature(deps: {
     header("Choose Badge Type");
     modal!.classList.add("sp-card-type-picker-open");
     const grid = document.createElement("div"); grid.className = "sp-card-type-grid";
+    if (badgeClipboard) {
+      const paste = button("", () => {
+        close();
+        pasteBadge(badges().length);
+      }, "sp-card-type-option");
+      paste.setAttribute("aria-label", "Paste copied badge");
+      paste.innerHTML = '<span class="sp-card-type-icon mdi mdi-content-paste"></span><span class="sp-card-type-copy"><span class="sp-card-type-title">Paste copied badge</span><span class="sp-card-type-description">Add the badge from the clipboard to the end of this row.</span></span>';
+      grid.appendChild(paste);
+    }
     for (const type of BADGE_SUBTYPES) {
       const item = button("", () => edit(badges().length, type.key), "sp-card-type-option");
       item.setAttribute("data-badge-type", type.key);

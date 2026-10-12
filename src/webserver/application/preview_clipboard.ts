@@ -41,6 +41,7 @@ export interface PreviewClipboardFeature {
     cutSlot(slot?: any): void;
     cutButtons(slots?: any): void;
     showCopyCode(slots?: any): void;
+    showCopyCodeForConfig(button?: any): void;
     showPasteCode(position?: any, targetIsSubpage?: any): void;
     pasteButton(position?: any): void;
     pasteSubpageButton(position?: any): void;
@@ -135,6 +136,15 @@ export function createPreviewClipboardFeature(
             var entry: any = buildClipboardEntry(slot);
             if (entry)
                 entries.push(cardTransferEntryFromClipboard(entry));
+        });
+        return EspControlModel.createCardTransferCode({
+            device: dependencies.layout.deviceId,
+            firmware: String(state.firmwareVersion || ""),
+        }, entries);
+    }
+    function cardTransferCodeForConfigs(buttons: any[]) {
+        var entries = buttons.map(function (button: any) {
+            return cardTransferEntryFromClipboard(createClipboardEntry(button, 1));
         });
         return EspControlModel.createCardTransferCode({
             device: dependencies.layout.deviceId,
@@ -575,6 +585,20 @@ export function createPreviewClipboardFeature(
             showBanner(error.cardTransferMessage || error.message || "Could not create card code.", "error");
             return;
         }
+        showCopyCodeValue(code);
+    }
+    function showCopyCodeForConfig(button: any) {
+        var code: any;
+        try {
+            code = cardTransferCodeForConfigs([button]);
+        }
+        catch (error: any) {
+            showBanner(error.cardTransferMessage || error.message || "Could not create badge code.", "error");
+            return;
+        }
+        showCopyCodeValue(code);
+    }
+    function showCopyCodeValue(code: string) {
         var dialog: any = createCardTransferDialog("Copy Code");
         var intro: any = document.createElement("p");
         intro.textContent = "Copy this code to another controller.";
@@ -713,6 +737,7 @@ export function createPreviewClipboardFeature(
         cutSlot,
         cutButtons,
         showCopyCode: showCopyCardCode,
+        showCopyCodeForConfig,
         showPasteCode: showPasteCardCode,
         pasteButton,
         pasteSubpageButton,

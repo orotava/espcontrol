@@ -593,6 +593,7 @@ function composeApplicationContext(): ApplicationContext {
     artworkPostApi,
   });
   let badgeRows: BadgeRowFeature;
+  let copyBadgeCode = (_button: any) => {};
   selection = createButtonSettingsSelectionFeature(
     runtime,
     clockBarState,
@@ -634,6 +635,8 @@ function composeApplicationContext(): ApplicationContext {
     deviceProfile: layout.deviceId, layout,
     codec: configurationCodec,
     fields, iconPicker, entities: entityState, shell,
+    contextMenu: { showBadge: (event, actions) => contextMenu.showBadge(event, actions) },
+    showCopyCode: (button) => copyBadgeCode(button),
     renderPreview: () => preview.render(),
     prepareBadgeSelection: () => selection.prepareBadgeSelection(),
   });
@@ -655,6 +658,7 @@ function composeApplicationContext(): ApplicationContext {
     deleteButtons: (slots) => interactions.deleteButtons(slots),
     emptyButtonConfig: () => interactions.emptyButtonConfig(),
   });
+  copyBadgeCode = clipboard.showCopyCodeForConfig;
   contextMenu = createPreviewContextMenuFeature({
     document: dom.document,
     window: dom.window,

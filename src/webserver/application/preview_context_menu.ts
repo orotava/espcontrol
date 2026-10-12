@@ -59,8 +59,19 @@ export interface PreviewContextMenuFeature {
     showSelection(event?: any): void;
     showClockBar(event?: any, item?: any): void;
     showCard(event?: any, slot?: any): void;
+    showBadge(event?: any, actions?: BadgeContextMenuActions): void;
     showBack(event?: any): void;
     showEmpty(event?: any, position?: any): void;
+}
+
+export interface BadgeContextMenuActions {
+    edit(): void;
+    duplicate(): void;
+    copy(): void;
+    copyCode(): void;
+    cut(): void;
+    delete(): void;
+    paste?: () => void;
 }
 
 export function createPreviewContextMenuFeature(dependencies: PreviewContextMenuDependencies): PreviewContextMenuFeature {
@@ -341,6 +352,25 @@ export function createPreviewContextMenuFeature(dependencies: PreviewContextMenu
         document.body.appendChild(ctxMenu);
         positionMenu(ctxMenu, e);
     }
+    function showBadgeContextMenu(this: any, e?: any, actions?: BadgeContextMenuActions) {
+        if (isConfigLocked() || !actions) return;
+        hideContextMenu();
+        ctxMenu = document.createElement("div");
+        ctxMenu.className = "sp-ctx-menu";
+        if (actions.paste) {
+            addCtxItem("content-paste", "Paste", actions.paste);
+            addCtxDivider();
+        }
+        addCtxItem("pencil", "Edit Badge", actions.edit);
+        addCtxDivider();
+        addCtxItem("content-copy", "Duplicate", actions.duplicate);
+        addCtxItem("clipboard-outline", "Copy", actions.copy);
+        addCtxItem("code-json", "Copy Code", actions.copyCode);
+        addCtxItem("content-cut", "Cut", actions.cut);
+        addCtxItem("delete", "Delete", actions.delete, true);
+        document.body.appendChild(ctxMenu);
+        positionMenu(ctxMenu, e);
+    }
     function showBackContextMenu(this: any, e?: any) {
         if (isConfigLocked())
             return;
@@ -410,6 +440,7 @@ export function createPreviewContextMenuFeature(dependencies: PreviewContextMenu
         showSelection: showSelectionMenu,
         showClockBar: showClockBarContextMenu,
         showCard: showContextMenu,
+        showBadge: showBadgeContextMenu,
         showBack: showBackContextMenu,
         showEmpty: showEmptySlotMenu,
     };
