@@ -6432,6 +6432,8 @@ async function assertBadgeJourney(browser, testCase) {
     assert(!(await page.locator(".sp-badge-row").evaluate(row => row.hidden)), "Show badges restores the badge row");
     const gridCount = await page.locator(".sp-main [data-pos]").count();
     assert.strictEqual(await page.locator(".sp-badge-slider .sp-badge-fill").count(), 1);
+    assert.strictEqual(await page.locator(".sp-badge-slider .sp-badge-fill").evaluate(fill => getComputedStyle(fill).opacity), "1",
+      "The badge slider fill uses the full primary color");
     const geometry = await page.locator('.sp-badge-row [data-badge-index="0"]').evaluate(badge => {
       const bounds = badge.getBoundingClientRect();
       const text = badge.querySelector(".sp-badge-text");

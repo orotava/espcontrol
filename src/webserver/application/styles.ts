@@ -645,7 +645,7 @@ export function createWebStyles(dragAnimation: boolean): string {
         ".sp-badge-content{display:flex;align-items:center;gap:calc(var(--btn-label)*.4);position:relative;z-index:1;min-width:0}" +
         ".sp-badge-content>.mdi{font-size:calc(var(--btn-label)*1.2);width:calc(var(--btn-label)*1.2);height:calc(var(--btn-label)*1.2);line-height:1;flex-shrink:0}" +
         ".sp-badge-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}" +
-        ".sp-badge-fill{position:absolute;inset:0 auto 0 0;width:35%;background:var(--card-active-color,var(--screen-primary));opacity:.3;pointer-events:none}" +
+        ".sp-badge-fill{position:absolute;inset:0 auto 0 0;width:35%;background:var(--card-active-color,var(--screen-primary));opacity:1;pointer-events:none}" +
         ".sp-btn-label-row{display:flex;align-items:baseline;width:100%;overflow:hidden;position:relative;z-index:1}" +
         ".sp-btn-label-row .sp-btn-label{flex:1;min-width:0}" +
         ".sp-subpage-badge{font-size:var(--btn-label);line-height:1;color:var(--card-text-color,var(--preview-text-primary));flex-shrink:0;" +
