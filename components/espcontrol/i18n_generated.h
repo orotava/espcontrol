@@ -572,6 +572,7 @@ inline const char *espcontrol_i18n_de(const char *text) {
   if (std::strcmp(text, "Lightning And Rain") == 0) return "Gewitter und Regen";
   if (std::strcmp(text, "Light") == 0) return "Licht";
   if (std::strcmp(text, "Loading") == 0) return "Laden";
+  if (std::strcmp(text, "Loading forecast") == 0) return "Wettervorhersage wird geladen";
   if (std::strcmp(text, "Locate") == 0) return "Orten";
   if (std::strcmp(text, "Lock") == 0) return "Sperren";
   if (std::strcmp(text, "Lawn Mower") == 0) return "Rasenmäher";
@@ -811,6 +812,7 @@ inline const char *espcontrol_i18n_es(const char *text) {
   if (std::strcmp(text, "Lightning And Rain") == 0) return "Rayos y lluvia";
   if (std::strcmp(text, "Light") == 0) return "Luz";
   if (std::strcmp(text, "Loading") == 0) return "Cargando";
+  if (std::strcmp(text, "Loading forecast") == 0) return "Cargando el pronóstico";
   if (std::strcmp(text, "Locate") == 0) return "Localizar";
   if (std::strcmp(text, "Lock") == 0) return "Bloquear";
   if (std::strcmp(text, "Lawn Mower") == 0) return "Cortacésped";
@@ -1311,6 +1313,7 @@ inline const char *espcontrol_i18n_fr(const char *text) {
   if (std::strcmp(text, "Lightning And Rain") == 0) return "Orage et pluie";
   if (std::strcmp(text, "Light") == 0) return "Lumière";
   if (std::strcmp(text, "Loading") == 0) return "Chargement";
+  if (std::strcmp(text, "Loading forecast") == 0) return "Chargement des prévisions";
   if (std::strcmp(text, "Locate") == 0) return "Localiser";
   if (std::strcmp(text, "Lock") == 0) return "Verrouiller";
   if (std::strcmp(text, "Lawn Mower") == 0) return "Tondeuse";
@@ -2071,6 +2074,7 @@ inline const char *espcontrol_i18n_it(const char *text) {
   if (std::strcmp(text, "Lightning And Rain") == 0) return "Fulmini e pioggia";
   if (std::strcmp(text, "Light") == 0) return "Luce";
   if (std::strcmp(text, "Loading") == 0) return "Caricamento";
+  if (std::strcmp(text, "Loading forecast") == 0) return "Caricamento previsioni";
   if (std::strcmp(text, "Locate") == 0) return "Localizza";
   if (std::strcmp(text, "Lock") == 0) return "Blocca";
   if (std::strcmp(text, "Lawn Mower") == 0) return "Tagliaerba";
@@ -2562,6 +2566,7 @@ inline const char *espcontrol_i18n_nl(const char *text) {
   if (std::strcmp(text, "Lightning And Rain") == 0) return "Bliksem en regen";
   if (std::strcmp(text, "Light") == 0) return "Licht";
   if (std::strcmp(text, "Loading") == 0) return "Laden";
+  if (std::strcmp(text, "Loading forecast") == 0) return "Weersverwachting laden";
   if (std::strcmp(text, "Locate") == 0) return "Lokaliseren";
   if (std::strcmp(text, "Lock") == 0) return "Vergrendelen";
   if (std::strcmp(text, "Lawn Mower") == 0) return "Grasmaaier";
@@ -3047,6 +3052,7 @@ inline const char *espcontrol_i18n_pt_br(const char *text) {
   if (std::strcmp(text, "Lightning And Rain") == 0) return "Raios e chuva";
   if (std::strcmp(text, "Light") == 0) return "Luz";
   if (std::strcmp(text, "Loading") == 0) return "Carregando";
+  if (std::strcmp(text, "Loading forecast") == 0) return "Carregando previsão";
   if (std::strcmp(text, "Locate") == 0) return "Localizar";
   if (std::strcmp(text, "Lock") == 0) return "Bloquear";
   if (std::strcmp(text, "Lawn Mower") == 0) return "Cortador de grama";
@@ -3291,6 +3297,7 @@ inline const char *espcontrol_i18n_pt(const char *text) {
   if (std::strcmp(text, "Lightning And Rain") == 0) return "Relâmpagos e chuva";
   if (std::strcmp(text, "Light") == 0) return "Luz";
   if (std::strcmp(text, "Loading") == 0) return "A carregar";
+  if (std::strcmp(text, "Loading forecast") == 0) return "A carregar previsão";
   if (std::strcmp(text, "Locate") == 0) return "Localizar";
   if (std::strcmp(text, "Lock") == 0) return "Bloquear";
   if (std::strcmp(text, "Lawn Mower") == 0) return "Corta-relva";
@@ -5302,6 +5309,7 @@ inline const char *espcontrol_i18n_key_en(const char *key) {
   if (std::strcmp(key, "lightning_and_rain") == 0) return "Lightning And Rain";
   if (std::strcmp(key, "light") == 0) return "Light";
   if (std::strcmp(key, "loading") == 0) return "Loading";
+  if (std::strcmp(key, "loading_forecast") == 0) return "Loading forecast";
   if (std::strcmp(key, "locate") == 0) return "Locate";
   if (std::strcmp(key, "lock") == 0) return "Lock";
   if (std::strcmp(key, "lawn_mower") == 0) return "Lawn Mower";
@@ -6049,6 +6057,7 @@ inline const char *espcontrol_i18n_key_de(const char *key) {
   if (std::strcmp(key, "lightning_and_rain") == 0) return "Gewitter und Regen";
   if (std::strcmp(key, "light") == 0) return "Licht";
   if (std::strcmp(key, "loading") == 0) return "Laden";
+  if (std::strcmp(key, "loading_forecast") == 0) return "Wettervorhersage wird geladen";
   if (std::strcmp(key, "locate") == 0) return "Orten";
   if (std::strcmp(key, "lock") == 0) return "Sperren";
   if (std::strcmp(key, "lawn_mower") == 0) return "Rasenmäher";
@@ -6289,6 +6298,7 @@ inline const char *espcontrol_i18n_key_es(const char *key) {
   if (std::strcmp(key, "lightning_and_rain") == 0) return "Rayos y lluvia";
   if (std::strcmp(key, "light") == 0) return "Luz";
   if (std::strcmp(key, "loading") == 0) return "Cargando";
+  if (std::strcmp(key, "loading_forecast") == 0) return "Cargando el pronóstico";
   if (std::strcmp(key, "locate") == 0) return "Localizar";
   if (std::strcmp(key, "lock") == 0) return "Bloquear";
   if (std::strcmp(key, "lawn_mower") == 0) return "Cortacésped";
@@ -6791,6 +6801,7 @@ inline const char *espcontrol_i18n_key_fr(const char *key) {
   if (std::strcmp(key, "lightning_and_rain") == 0) return "Orage et pluie";
   if (std::strcmp(key, "light") == 0) return "Lumière";
   if (std::strcmp(key, "loading") == 0) return "Chargement";
+  if (std::strcmp(key, "loading_forecast") == 0) return "Chargement des prévisions";
   if (std::strcmp(key, "locate") == 0) return "Localiser";
   if (std::strcmp(key, "lock") == 0) return "Verrouiller";
   if (std::strcmp(key, "lawn_mower") == 0) return "Tondeuse";
@@ -7554,6 +7565,7 @@ inline const char *espcontrol_i18n_key_it(const char *key) {
   if (std::strcmp(key, "lightning_and_rain") == 0) return "Fulmini e pioggia";
   if (std::strcmp(key, "light") == 0) return "Luce";
   if (std::strcmp(key, "loading") == 0) return "Caricamento";
+  if (std::strcmp(key, "loading_forecast") == 0) return "Caricamento previsioni";
   if (std::strcmp(key, "locate") == 0) return "Localizza";
   if (std::strcmp(key, "lock") == 0) return "Blocca";
   if (std::strcmp(key, "lawn_mower") == 0) return "Tagliaerba";
@@ -8047,6 +8059,7 @@ inline const char *espcontrol_i18n_key_nl(const char *key) {
   if (std::strcmp(key, "lightning_and_rain") == 0) return "Bliksem en regen";
   if (std::strcmp(key, "light") == 0) return "Licht";
   if (std::strcmp(key, "loading") == 0) return "Laden";
+  if (std::strcmp(key, "loading_forecast") == 0) return "Weersverwachting laden";
   if (std::strcmp(key, "locate") == 0) return "Lokaliseren";
   if (std::strcmp(key, "lock") == 0) return "Vergrendelen";
   if (std::strcmp(key, "lawn_mower") == 0) return "Grasmaaier";
@@ -8533,6 +8546,7 @@ inline const char *espcontrol_i18n_key_pt_br(const char *key) {
   if (std::strcmp(key, "lightning_and_rain") == 0) return "Raios e chuva";
   if (std::strcmp(key, "light") == 0) return "Luz";
   if (std::strcmp(key, "loading") == 0) return "Carregando";
+  if (std::strcmp(key, "loading_forecast") == 0) return "Carregando previsão";
   if (std::strcmp(key, "locate") == 0) return "Localizar";
   if (std::strcmp(key, "lock") == 0) return "Bloquear";
   if (std::strcmp(key, "lawn_mower") == 0) return "Cortador de grama";
@@ -8778,6 +8792,7 @@ inline const char *espcontrol_i18n_key_pt(const char *key) {
   if (std::strcmp(key, "lightning_and_rain") == 0) return "Relâmpagos e chuva";
   if (std::strcmp(key, "light") == 0) return "Luz";
   if (std::strcmp(key, "loading") == 0) return "A carregar";
+  if (std::strcmp(key, "loading_forecast") == 0) return "A carregar previsão";
   if (std::strcmp(key, "locate") == 0) return "Localizar";
   if (std::strcmp(key, "lock") == 0) return "Bloquear";
   if (std::strcmp(key, "lawn_mower") == 0) return "Corta-relva";
