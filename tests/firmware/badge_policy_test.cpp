@@ -4,6 +4,9 @@
 
 int main() {
   using namespace espcontrol::badge;
+  assert(width_for_text(24, 20, false) == 108);
+  assert(width_for_text(24, 20, true) == 168);
+  assert(width_for_text(24, 150, false) == 212);
   assert(action("erase") == "display");
   assert(action("button") == "button");
   assert(button_supported("button.restart"));

@@ -1,9 +1,18 @@
 #pragma once
 
 #include "number_slider_policy.h"
+#include <algorithm>
+#include <climits>
 #include <string>
 
 namespace espcontrol::badge {
+
+inline int width_for_text(int line_height, int text_width, bool slider) {
+  const long long minimum = static_cast<long long>(line_height) * (slider ? 7 : 9) / (slider ? 1 : 2);
+  const long long natural = static_cast<long long>(text_width) +
+    2LL * (static_cast<long long>(line_height) * 13 / 20) + line_height / 3 + line_height;
+  return static_cast<int>(std::min<long long>(INT_MAX, std::max(minimum, natural)));
+}
 
 inline std::string action(const std::string &value) {
   return value == "subpage" || value == "modal" || value == "toggle" || value == "button" ||

@@ -6388,7 +6388,7 @@ async function assertBadgeJourney(browser, testCase) {
   const badge = (label, options = "", extra = {}) => ({ entity: "", label, icon: "Home", icon_on: "Auto", sensor: "", unit: "", type: "badge", precision: "label", options, ...extra });
   nativeState.document.settings.badge_row_0 = serializeBadgeRow([
     badge("Kitchen", "badge_action=modal", { entity: "climate.kitchen", sensor: "sensor.kitchen_temperature", precision: "value", icon: "Thermometer", unit: "°C" }),
-    badge("Kitchen", "badge_action=subpage,badge_page=3"),
+    badge("A longer badge label stays on one line", "badge_action=subpage,badge_page=3"),
     badge("Volume", "badge_action=slider", { entity: "media_player.kitchen", precision: "value", icon: "Volume High" }),
     badge("Lights", "badge_action=toggle,active_color", { entity: "light.kitchen", icon: "Lightbulb" }),
     badge("2 open", "", { icon: "Window Open" }),
@@ -6426,6 +6426,14 @@ async function assertBadgeJourney(browser, testCase) {
     });
     assert(geometry.height < geometry.width && geometry.height > geometry.textHeight, "Badge is a compact horizontal pill with visible text");
     assert(geometry.aligned && !geometry.overflowing, "Badge icon and value fit side by side");
+    const longBadge = await page.locator('.sp-badge-row [data-badge-index="1"]').evaluate(badge => {
+      const bounds = badge.getBoundingClientRect();
+      const text = badge.querySelector(".sp-badge-text");
+      return { width: bounds.width, scrollWidth: text.scrollWidth, clientWidth: text.clientWidth,
+        whiteSpace: getComputedStyle(text).whiteSpace };
+    });
+    assert(longBadge.whiteSpace === "nowrap" && longBadge.scrollWidth <= longBadge.clientWidth + 1,
+      "Long badge labels expand their pill instead of wrapping or clipping");
     assert(geometry.aboveGrid, "The short row sits above the full card grid");
     const typography = await page.locator(".sp-badge-text").first().evaluate(text => {
       const badge = getComputedStyle(text);

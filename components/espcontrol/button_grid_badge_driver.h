@@ -29,6 +29,10 @@ struct BadgeCtx {
   bool target_on = false;
   bool level_known = false;
   bool active_color = false;
+  bool fit_width = false;
+  bool slider_action = false;
+  int line_height = 24;
+  int text_width_percent = 100;
   bool dragging = false;
   bool media_absolute = true;
   int page = 0;
@@ -117,6 +121,21 @@ inline void badge_update(BadgeCtx *ctx) {
     }
   }
   lv_label_set_display_text(ctx->value_label, text.c_str());
+  if (ctx->fit_width && ctx->value_label) {
+    const lv_font_t *font = lv_obj_get_style_text_font(ctx->value_label, LV_PART_MAIN);
+    lv_point_t text_size{};
+    lv_text_get_size(&text_size, text.c_str(), font, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+    const int compensated_width = static_cast<int>((static_cast<long long>(text_size.x) * ctx->text_width_percent + 99) / 100);
+    lv_obj_set_width(ctx->button, espcontrol::badge::width_for_text(
+      ctx->line_height, compensated_width, ctx->slider_action));
+  }
+}
+
+inline void badge_driver_fit_width(lv_obj_t *button) {
+  BadgeCtx *ctx = badge_context(button);
+  if (!ctx) return;
+  ctx->fit_width = true;
+  badge_update(ctx);
 }
 
 inline void badge_handle_click(BadgeCtx *ctx) {
@@ -169,6 +188,7 @@ inline bool badge_driver_setup_visual(BtnSlot &slot, const ParsedCfg &config,
   ctx->padding = capture_card_padding(slot.btn);
   lv_obj_set_style_pad_all(slot.btn, 0, LV_PART_MAIN);
   ctx->action = espcontrol::badge::action(cfg_option_value(config.options, "badge_action"));
+  ctx->slider_action = ctx->action == "slider";
   ctx->target = config.entity;
   ctx->label = config.label;
   ctx->display_entity = config.sensor;
@@ -235,6 +255,8 @@ inline bool badge_driver_setup_visual(BtnSlot &slot, const ParsedCfg &config,
   lv_obj_set_flex_align(ctx->content, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
   const lv_font_t *label_font = slot.text_lbl ? lv_obj_get_style_text_font(slot.text_lbl, LV_PART_MAIN) : nullptr;
   const lv_coord_t line = label_font ? label_font->line_height : 24;
+  ctx->line_height = line;
+  ctx->text_width_percent = display.width.vertical_axis ? 100 : display_text_width_percent(display);
   lv_obj_set_style_pad_left(ctx->content, line * 13 / 20, LV_PART_MAIN);
   lv_obj_set_style_pad_right(ctx->content, line * 13 / 20, LV_PART_MAIN);
   lv_obj_set_style_pad_column(ctx->content, line / 3, LV_PART_MAIN);
