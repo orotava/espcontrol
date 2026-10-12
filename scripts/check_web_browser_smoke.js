@@ -6413,6 +6413,16 @@ async function assertBadgeJourney(browser, testCase) {
     assert(await hideBadgesControl.isVisible(), "The hide-badges control appears when no card is selected");
     assert(await addBadgeButton.isVisible(), "An add badge affordance is always present in the badge row");
     assert(await page.locator(".sp-badge-row-items > :last-child").evaluate(element => element.classList.contains("sp-badge-add")), "The add badge affordance stays at the end of the row");
+    const addBadgeDefaultBorder = await addBadgeButton.evaluate(button => getComputedStyle(button).borderTopColor);
+    await addBadgeButton.hover();
+    const addBadgeHover = await addBadgeButton.evaluate(button => {
+      const style = getComputedStyle(button);
+      return { borderStyle: style.borderTopStyle, borderColor: style.borderTopColor,
+        backgroundColor: style.backgroundColor };
+    });
+    assert(addBadgeHover.borderStyle === "dashed" && addBadgeHover.borderColor !== addBadgeDefaultBorder,
+      "The add-badge hover keeps a visible blue dotted outline");
+    assert(addBadgeHover.backgroundColor !== "rgba(0, 0, 0, 0)", "The add-badge hover uses a filled accent background");
     assert.strictEqual(await page.locator(".sp-main .sp-badge-card").count(), 0, "Badges never occupy card slots");
     await hideBadgesControl.click();
     assert(await showBadgesControl.isVisible(), "The control changes to show badges when the row is hidden");
