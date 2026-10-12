@@ -50,6 +50,7 @@ export function createBadgeRowFeature(deps: {
   let draft: { page: number; index: number; button: CardConfig } | null = null;
   let selectedBadge: { page: number; index: number } | null = null;
   let saving = false;
+  let badgesHidden = false;
   let draggedIndex = -1;
   let loadGeneration = 0;
   const pageIndex = () => state.editingSubpage || 0;
@@ -96,8 +97,9 @@ export function createBadgeRowFeature(deps: {
     row.replaceChildren();
     const items = badges().map(cloneCardConfig);
     if (draft && draft.page === pageIndex()) items[draft.index] = draft.button;
-    els.previewScreen.classList.toggle("sp-has-badge-row", state.badgeRowsSupported && state.badgeRowsReady);
-    row.hidden = !state.badgeRowsSupported || !state.badgeRowsReady;
+    const badgeRowAvailable = state.badgeRowsSupported && state.badgeRowsReady;
+    els.previewScreen.classList.toggle("sp-has-badge-row", badgeRowAvailable && !badgesHidden);
+    row.hidden = !badgeRowAvailable || badgesHidden;
     const group = document.createElement("div");
     group.className = "sp-badge-row-items";
     row.appendChild(group);
@@ -242,7 +244,10 @@ export function createBadgeRowFeature(deps: {
   function renderSelectionControl(container: HTMLElement) {
     ensureUi();
     if (!state.badgeRowsSupported) return;
-    const control = button("Badges", () => openList(), "sp-selection-btn", "view-grid-plus", "Manage badge bar");
+    const control = button(badgesHidden ? "Show badges" : "Hide badges", () => {
+      badgesHidden = !badgesHidden;
+      deps.renderPreview();
+    }, "sp-selection-btn", badgesHidden ? "eye" : "eye-off", badgesHidden ? "Show badges" : "Hide badges");
     control.disabled = !state.badgeRowsReady || shell.isConfigLocked();
     container.appendChild(control);
   }
@@ -341,22 +346,6 @@ export function createBadgeRowFeature(deps: {
     const heading = document.createElement("div"); heading.className = "sp-section-title"; heading.textContent = title;
     config!.appendChild(heading);
     overlay!.classList.add("sp-visible");
-  }
-
-  function openList() {
-    draft = null;
-    header(pageIndex() ? "Subpage Badges" : "Home Badges");
-    const panel = document.createElement("div"); panel.className = "sp-panel sp-badge-list";
-    if (!badges().length) {
-      const hint = document.createElement("p"); hint.className = "sp-hint"; hint.textContent = "Add an icon with a label or live value above the card grid."; panel.appendChild(hint);
-    }
-    badges().forEach((badge, index) => panel.appendChild(button(badge.label || badge.sensor || "Badge " + (index + 1), () => edit(index))));
-    const add = button("Add badge", chooseType);
-    add.disabled = badges().length >= MAX_ROW_BADGES;
-    panel.appendChild(add);
-    const actions = document.createElement("div"); actions.className = "sp-btn-row sp-btn-row--save";
-    actions.appendChild(button("Done", close, "sp-action-btn sp-save-btn"));
-    config!.append(panel, actions);
   }
 
   function chooseType() {

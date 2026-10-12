@@ -6406,13 +6406,20 @@ async function assertBadgeJourney(browser, testCase) {
     await page.waitForFunction(() => window.__eventSources?.length > 0);
     await seedNativeDocument(page, nativeState);
     await page.waitForFunction(() => document.querySelectorAll(".sp-badge-row .sp-badge-card").length === 5);
-    const badgeBarControl = page.getByRole("button", { name: "Manage badge bar", exact: true });
+    const hideBadgesControl = page.getByRole("button", { name: "Hide badges", exact: true });
+    const showBadgesControl = page.getByRole("button", { name: "Show badges", exact: true });
     const addBadgeButton = page.getByRole("button", { name: "Add badge", exact: true });
     assert(await page.locator(".sp-selection-bar").isVisible(), "The edit bar stays visible with no selected card");
-    assert(await badgeBarControl.isVisible(), "The badge-bar control appears when no card is selected");
+    assert(await hideBadgesControl.isVisible(), "The hide-badges control appears when no card is selected");
     assert(await addBadgeButton.isVisible(), "An add badge affordance is always present in the badge row");
     assert(await page.locator(".sp-badge-row-items > :last-child").evaluate(element => element.classList.contains("sp-badge-add")), "The add badge affordance stays at the end of the row");
     assert.strictEqual(await page.locator(".sp-main .sp-badge-card").count(), 0, "Badges never occupy card slots");
+    await hideBadgesControl.click();
+    assert(await showBadgesControl.isVisible(), "The control changes to show badges when the row is hidden");
+    assert(await page.locator(".sp-badge-row").evaluate(row => row.hidden), "Hide badges hides the badge row");
+    await showBadgesControl.click();
+    assert(await hideBadgesControl.isVisible(), "The control changes back to hide badges when the row is shown");
+    assert(!(await page.locator(".sp-badge-row").evaluate(row => row.hidden)), "Show badges restores the badge row");
     const gridCount = await page.locator(".sp-main [data-pos]").count();
     assert.strictEqual(await page.locator(".sp-badge-slider .sp-badge-fill").count(), 1);
     const geometry = await page.locator('.sp-badge-row [data-badge-index="0"]').evaluate(badge => {
@@ -6463,7 +6470,7 @@ async function assertBadgeJourney(browser, testCase) {
     const dialog = page.locator(".sp-badge-settings-overlay");
     await page.locator('.sp-badge-row [data-badge-index="0"]').click();
     assert(await page.locator('.sp-badge-row [data-badge-index="0"]').evaluate(badge => badge.classList.contains("sp-selected")), "Clicking a badge selects it");
-    assert(!(await badgeBarControl.isVisible()), "The badge bar control is hidden while a badge is selected");
+    assert(!(await hideBadgesControl.isVisible()), "The hide-badges control is hidden while a badge is selected");
     await page.locator(".sp-selection-bar").getByRole("button", { name: "Edit", exact: true }).click();
     assert(await page.locator("#sp-badge-inp-entity").isVisible(), "Primary entity is visible without expanding settings");
     assert(!(await page.locator("#sp-badge-inp-badge-display").isVisible()), "Optional settings start collapsed like card settings");
@@ -6538,11 +6545,11 @@ async function assertBadgeJourney(browser, testCase) {
     // selected. Typing or choosing suggestions must not reset the badge editor.
     await page.locator('.sp-main [data-slot="1"]').click();
     assert(await page.locator(".sp-selection-bar").isVisible(), "The edit bar stays visible with a selected card");
-    assert(!(await badgeBarControl.isVisible()), "The badge-bar control is removed when a card is selected");
+    assert(!(await hideBadgesControl.isVisible()), "The hide-badges control is removed when a card is selected");
     async function addTypedBadge(type) {
-      if (!(await badgeBarControl.isVisible())) {
+      if (!(await hideBadgesControl.isVisible())) {
         await page.locator("#sp-screen > .sp-hint").click();
-        await badgeBarControl.waitFor({ state: "visible" });
+        await hideBadgesControl.waitFor({ state: "visible" });
       }
       await addBadgeButton.click();
       await dialog.locator(`[data-badge-type="${type}"]`).click();
