@@ -65,19 +65,11 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
         rerender();
       });
       helpers.markCardPrimaryField(type.parentElement, "type");
-      if (subtype !== "sensor" && button.precision !== "value") text("Label", "label", "e.g. Kitchen");
-      if (action === "subpage") {
-        if (helpers.badgeSubpageSettings) helpers.badgeSubpageSettings(panel, button);
-        else {
-          const current = configOptionValue(button.options, "badge_page");
-          const picker = select("Subpage", "badge-page", current, [[current, current ? "Existing page " + current : "No page"]], value => option("badge_page", value));
-          helpers.markCardPrimaryField(picker.parentElement, "entity");
-        }
-      } else if (subtype === "sensor") {
+      if (action !== "subpage" && subtype === "sensor") {
         const input = text("Entity", "sensor", "e.g. sensor.kitchen_temperature", [], true);
         input.addEventListener("input", () => { button.precision = "value"; helpers.saveField("precision", "value"); });
         input.addEventListener("change", () => { button.precision = "value"; helpers.saveField("precision", "value"); });
-      } else {
+      } else if (action !== "subpage") {
         const domains = action === "slider" ? ["light", "fan", "number", "input_number", "media_player"]
           : action === "toggle" ? ["light", "switch", "input_boolean", "fan"]
           : action === "button" ? ["button", "input_button"] : [];
@@ -88,6 +80,15 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
           note.className = "sp-hint";
           note.textContent = "Opens the existing control modal for a card configured on this panel, including cards inside subpages.";
           panel.appendChild(note);
+        }
+      }
+      if (subtype !== "sensor" && button.precision !== "value") text("Label", "label", "e.g. Kitchen");
+      if (action === "subpage") {
+        if (helpers.badgeSubpageSettings) helpers.badgeSubpageSettings(panel, button);
+        else {
+          const current = configOptionValue(button.options, "badge_page");
+          const picker = select("Subpage", "badge-page", current, [[current, current ? "Existing page " + current : "No page"]], value => option("badge_page", value));
+          helpers.markCardPrimaryField(picker.parentElement, "entity");
         }
       }
       helpers.renderCardIconPicker(panel, button, helpers, { field: "icon", fallback: "Auto", label: "Icon" });

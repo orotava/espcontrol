@@ -6458,6 +6458,11 @@ async function assertBadgeJourney(browser, testCase) {
     assert(await page.locator("#sp-badge-inp-entity").isVisible(), "Primary entity is visible without expanding settings");
     assert(!(await page.locator("#sp-badge-inp-badge-display").isVisible()), "Optional settings start collapsed like card settings");
     await dialog.getByRole("button", { name: "Badge Settings", exact: true }).click();
+    await page.locator("#sp-badge-inp-badge-display").selectOption("label");
+    assert(await page.locator("#sp-badge-inp-entity").evaluate(entity =>
+      Boolean(entity.compareDocumentPosition(document.querySelector("#sp-badge-inp-label")) & Node.DOCUMENT_POSITION_FOLLOWING)),
+      "The badge entity field appears above its label");
+    await page.locator("#sp-badge-inp-badge-display").selectOption("value");
     assert.strictEqual(await page.locator("#sp-badge-inp-badge-display").inputValue(), "value");
     assert.strictEqual(await page.locator("#sp-badge-inp-entity").inputValue(), "climate.kitchen");
     assert.strictEqual(await page.locator("#sp-badge-inp-sensor").inputValue(), "sensor.kitchen_temperature");
