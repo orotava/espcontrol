@@ -10,6 +10,22 @@
 
 namespace espcontrol::badge {
 
+inline std::string card_options(const std::string &options) {
+  std::string result;
+  size_t start = 0;
+  while (start < options.size()) {
+    auto end = options.find(',', start);
+    if (end == std::string::npos) end = options.size();
+    const auto token = options.substr(start, end - start);
+    if (!token.empty() && token.compare(0, 6, "badge_") != 0) {
+      if (!result.empty()) result += ',';
+      result += token;
+    }
+    start = end + 1;
+  }
+  return result;
+}
+
 inline std::string slider_value_text(double value) {
   if (!std::isfinite(value)) return "--";
   value = std::round(value);
@@ -42,7 +58,7 @@ inline bool toggle_checked(bool available, bool is_on) {
 
 inline std::string action(const std::string &value) {
   return value == "subpage" || value == "modal" || value == "toggle" || value == "button" ||
-         value == "slider" ? value : "display";
+         value == "slider" || value == "card" ? value : "display";
 }
 
 inline bool button_supported(const std::string &entity) {

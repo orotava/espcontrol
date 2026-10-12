@@ -303,6 +303,7 @@ constexpr const char *CARD_CONTRACT_OPTION_NAME_ACTIVE_COLOR = "active_color";
 constexpr const char *CARD_CONTRACT_OPTION_NAME_ALARM_CARD_TYPE = "alarm_card_type";
 constexpr const char *CARD_CONTRACT_OPTION_NAME_BADGE_ACTION = "badge_action";
 constexpr const char *CARD_CONTRACT_OPTION_NAME_BADGE_ATTRIBUTE = "badge_attribute";
+constexpr const char *CARD_CONTRACT_OPTION_NAME_BADGE_CARD_TYPE = "badge_card_type";
 constexpr const char *CARD_CONTRACT_OPTION_NAME_BADGE_DECIMALS = "badge_decimals";
 constexpr const char *CARD_CONTRACT_OPTION_NAME_BADGE_PAGE = "badge_page";
 constexpr const char *CARD_CONTRACT_OPTION_NAME_CENTER_CLOCK = "center_clock";

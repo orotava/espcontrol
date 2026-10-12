@@ -639,6 +639,7 @@ function composeApplicationContext(): ApplicationContext {
     showCopyCode: (button) => copyBadgeCode(button),
     renderPreview: () => preview.render(),
     prepareBadgeSelection: () => selection.prepareBadgeSelection(),
+    pickerOptions: () => preview.pickerOptions(false),
   });
   const clipboard = createPreviewClipboardFeature({
     configPersistence: configurationPersistence,
@@ -707,6 +708,10 @@ function composeApplicationContext(): ApplicationContext {
     confirmationOptions, configurationCodec, layout, runtime, entityState,
     shell, requestApi, grid, iconPicker, selection, preview, interactions, fields,
   );
+  const renderGridCardSettings = buttonSettings.render;
+  buttonSettings.render = force => {
+    if (!badgeRows.renderEditorIfOpen()) renderGridCardSettings(force);
+  };
   const configEvents = createAppConfigEventsFeature(configurationPersistence, configurationCodec, layout, renderQueue);
   const stateEventHandlers = createAppStateEventHandlersFeature(
     runtime,

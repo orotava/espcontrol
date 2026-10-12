@@ -1,7 +1,8 @@
 import type { CardConfig } from "../contracts/types";
 import { configOptionEnabled, configOptionValue, preserveCardColorOptions, setConfigOptionValue } from "./config_primitives";
+import { badgeCardType } from "./badge_card";
 
-export const BADGE_ACTIONS = ["display", "subpage", "modal", "toggle", "button", "slider"] as const;
+export const BADGE_ACTIONS = ["display", "subpage", "modal", "toggle", "button", "slider", "card"] as const;
 export type BadgeAction = typeof BADGE_ACTIONS[number];
 
 export const BADGE_SUBTYPES = [
@@ -12,7 +13,7 @@ export const BADGE_SUBTYPES = [
   { key: "slider", label: "Slider", icon: "volume-high", defaultIcon: "Volume High", description: "Adjust brightness, volume or a number." },
   { key: "modal", label: "Modal", icon: "card-outline", defaultIcon: "Home", description: "Open an existing control modal." },
 ] as const;
-export type BadgeSubtype = typeof BADGE_SUBTYPES[number]["key"];
+export type BadgeSubtype = typeof BADGE_SUBTYPES[number]["key"] | "card";
 
 export function badgeSubtype(button: Partial<CardConfig>): BadgeSubtype {
   const action = badgeAction(button);
@@ -34,6 +35,16 @@ export function badgeAction(button: Partial<CardConfig>): BadgeAction {
 }
 
 export function normalizeBadgeConfig(button: CardConfig): void {
+  const cardType = badgeCardType(button);
+  if (cardType !== null) {
+    button.type = "badge";
+    button.options = setConfigOptionValue(button.options, "badge_action", cardType === "subpage" ? "subpage" : "card");
+    const page = configOptionValue(button.options, "badge_page");
+    if (cardType !== "subpage" || !/^[1-9]\d?$/.test(page) || Number(page) > 32) {
+      button.options = setConfigOptionValue(button.options, "badge_page", "");
+    }
+    return;
+  }
   const source = button.options || "";
   const action = badgeAction(button);
   let options = action === "display" ? "" : setConfigOptionValue("", "badge_action", action);

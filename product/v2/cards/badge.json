@@ -3,7 +3,8 @@
   "allowInSubpage": true,
   "domains": [],
   "options": [
-    { "name": "badge_action", "label": "Interaction", "kind": "choice", "values": ["display", "subpage", "modal", "toggle", "button", "slider"], "defaultValue": "display", "omitDefault": true },
+    { "name": "badge_action", "label": "Interaction", "kind": "choice", "values": ["display", "subpage", "modal", "toggle", "button", "slider", "card"], "defaultValue": "display", "omitDefault": true },
+    { "name": "badge_card_type", "label": "Card Type", "kind": "text", "hidden": true, "docsHidden": true, "omitDefault": true },
     { "name": "badge_page", "label": "Subpage", "kind": "text", "omitDefault": true },
     { "name": "badge_attribute", "label": "Value Attribute", "kind": "text", "omitDefault": true },
     { "name": "badge_decimals", "label": "Decimal Places", "kind": "choice", "values": ["0", "1", "2"], "defaultValue": "1", "omitDefault": true },

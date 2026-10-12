@@ -23,6 +23,10 @@ int main() {
   assert(!toggle_checked(false, true));
   assert(action("erase") == "display");
   assert(action("button") == "button");
+  assert(action("card") == "card");
+  assert(card_options("badge_card_type=media,badge_action=card,media_tabs=progress|volume,active_color,card_off_color=112233") ==
+         "media_tabs=progress|volume,active_color,card_off_color=112233");
+  assert(card_options("badge_page=8,ssid64=YWJjLGQ=,,hidden,badge_attribute=x") == "ssid64=YWJjLGQ=,hidden");
   assert(button_supported("button.restart"));
   assert(button_supported("input_button.scene"));
   assert(!button_supported("switch.lights"));

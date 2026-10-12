@@ -15,6 +15,11 @@ struct BadgeCtx {
   lv_obj_t *content = nullptr;
   lv_obj_t *value_label = nullptr;
   lv_obj_t *slider = nullptr;
+  lv_obj_t *icon_label = nullptr;
+  bool card_mode = false;
+  std::function<void()> card_refresh;
+  std::function<void()> card_click;
+  std::function<void()> card_cleanup;
   std::string action;
   std::string target;
   std::string display_entity;
@@ -42,6 +47,14 @@ struct BadgeCtx {
   espcontrol::number_slider::Metadata metadata;
   bool metadata_known[3] = {};
 };
+
+inline void badge_card_runtime_setup(BadgeCtx *ctx, const ParsedCfg &config,
+                                    const GridConfig &grid, const CardPalette &palette,
+                                    const BtnSlot &reference);
+inline void badge_card_runtime_queue(BadgeCtx *ctx, const ParsedCfg &config,
+                                    const GridConfig &grid, const CardPalette &palette,
+                                    const BtnSlot &reference);
+inline void badge_card_runtime_bind_pending();
 
 inline std::vector<BadgeCtx *> &badge_contexts() {
   static std::vector<BadgeCtx *> contexts;
@@ -80,6 +93,10 @@ inline std::string badge_slider_text(const BadgeCtx *ctx, int position) {
 
 inline void badge_update(BadgeCtx *ctx) {
   if (!ctx) return;
+  if (ctx->card_mode) {
+    if (ctx->card_refresh) ctx->card_refresh();
+    return;
+  }
   const bool control = ctx->action == "toggle" || ctx->action == "button" || ctx->action == "slider";
   const bool available = ctx->action == "slider" ? badge_slider_ready(ctx)
     : ctx->target_available && (ctx->action == "button"
@@ -151,7 +168,12 @@ inline void badge_driver_fit_width(lv_obj_t *button) {
 }
 
 inline void badge_handle_click(BadgeCtx *ctx) {
-  if (!ctx || screen_lock_enabled() || alarm_display_takeover_active()) return;
+  if (!ctx) return;
+  if (ctx->card_mode && ctx->action != "subpage") {
+    if (ctx->card_click) ctx->card_click();
+    return;
+  }
+  if (screen_lock_enabled() || alarm_display_takeover_active()) return;
   if (ctx->action == "subpage") badge_open_subpage(ctx->page);
   else if (ctx->action == "modal") espcontrol_open_modal(ctx->target, grid_phase2_complete());
   else if (ctx->action == "button" && ctx->target_available && espcontrol::badge::button_supported(ctx->target)) {
@@ -198,6 +220,7 @@ inline bool badge_driver_setup_visual(BtnSlot &slot, const ParsedCfg &config,
   ctx->padding = capture_card_padding(slot.btn);
   lv_obj_set_style_pad_all(slot.btn, 0, LV_PART_MAIN);
   ctx->action = espcontrol::badge::action(cfg_option_value(config.options, "badge_action"));
+  ctx->card_mode = !cfg_option_value(config.options, "badge_card_type").empty();
   ctx->slider_action = ctx->action == "slider";
   ctx->target = config.entity;
   ctx->label = config.label;
@@ -273,6 +296,7 @@ inline bool badge_driver_setup_visual(BtnSlot &slot, const ParsedCfg &config,
   lv_obj_clear_flag(icon_box, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(icon_box, line, line);
   lv_obj_t *icon = lv_label_create(icon_box);
+  ctx->icon_label = icon;
   // The main font contains every selectable icon; the smaller climate font
   // only includes climate symbols. Scale the glyph inside a compact box.
   const lv_font_t *icon_font = display_icon_font(display);
@@ -296,6 +320,7 @@ inline bool badge_driver_setup_visual(BtnSlot &slot, const ParsedCfg &config,
   badge_contexts().push_back(ctx);
   lv_obj_add_event_cb(ctx->content, [](lv_event_t *event) {
     auto *state = static_cast<BadgeCtx *>(lv_event_get_user_data(event));
+    if (state->card_cleanup) state->card_cleanup();
     if (state->slider) lv_obj_set_user_data(state->slider, nullptr);
     ha_release_callbacks_for_owner(state->content);
     auto &contexts = badge_contexts();
@@ -311,6 +336,7 @@ inline bool badge_driver_bind_data(BtnSlot &slot, const ParsedCfg &, const Conte
   if (!badge_driver_matches(context)) return false;
   BadgeCtx *ctx = badge_context(slot.btn);
   if (!ctx) return true;
+  if (ctx->card_mode) return true;
   // Rebinding after a layout refresh must not duplicate callbacks or retain
   // subscriptions to widgets from an earlier grid.
   ha_release_callbacks_for_owner(ctx->content);

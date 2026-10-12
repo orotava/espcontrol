@@ -128,3 +128,45 @@ test("deleting or replacing a subpage clears its row in the same save while rena
   assert.equal(document.settings.button_order, "1,2");
   assert.deepEqual(cleared, [1]);
 });
+
+test("every card type survives conversion to a badge and the saved row", () => {
+  const { badgeCardType, badgeToCard, updateBadgeFromCard } = loadTypescriptTest("src/webserver/model/badge_card.ts");
+  const { cardContractCardKeys, cardContractDefaultConfig } = loadTypescriptTest("src/webserver/generated/card_contract.ts");
+  for (const type of cardContractCardKeys().filter(type => type !== "badge")) {
+    const card = { ...cardContractDefaultConfig(type), entity: "light.kitchen", sensor: "sensor.kitchen",
+      label: "Kitchen | 温度", icon: "Lightbulb Outline", icon_on: "Lightbulb", precision: "custom",
+      options: "active_color,card_off_color=112233,native_payload=YWJjLGQ=" };
+    const wrapped = badge("");
+    updateBadgeFromCard(wrapped, card);
+    normalizeBadgeConfig(wrapped);
+    const restored = parseBadgeRow(serializeBadgeRow([wrapped]))[0];
+    assert.equal(badgeCardType(restored), card.type);
+    assert.deepEqual(badgeToCard(restored), card, type + " preserves its native fields and options");
+  }
+});
+
+test("card badge mode changes preserve the new settings and remove stale navigation", () => {
+  const { badgeCardType, badgeToCard, updateBadgeFromCard, cardBadgeUsesSlider } = loadTypescriptTest("src/webserver/model/badge_card.ts");
+  const wrapped = badge("badge_card_type=subpage,badge_action=subpage,badge_page=12");
+  const card = badgeToCard(wrapped);
+  card.type = "light_temperature";
+  card.options = "kelvin_min=2000,kelvin_max=6500,card_off_color=112233";
+  updateBadgeFromCard(wrapped, card);
+  normalizeBadgeConfig(wrapped);
+  assert.equal(badgeCardType(wrapped), "light_temperature");
+  assert.equal(configOptionValue(wrapped.options, "badge_page"), "");
+  assert.deepEqual(badgeToCard(wrapped), card);
+  assert(cardBadgeUsesSlider(card));
+  assert(cardBadgeUsesSlider({ ...card, type: "media", sensor: "position" }));
+  assert(!cardBadgeUsesSlider({ ...card, type: "media", sensor: "volume" }));
+  assert.equal(badgeCardType(badge("badge_card_type=unknown")), null);
+  for (const page of ["0", "33", "12oops", "12.1"]) {
+    const invalid = badge("badge_card_type=subpage,badge_page=" + page);
+    normalizeBadgeConfig(invalid);
+    assert.equal(configOptionValue(invalid.options, "badge_page"), "");
+  }
+  const linked = badge("badge_card_type=subpage,badge_page=12");
+  linked.label = "Renamed";
+  normalizeBadgeConfig(linked);
+  assert.equal(configOptionValue(parseBadgeRow(serializeBadgeRow([linked]))[0].options, "badge_page"), "12");
+});

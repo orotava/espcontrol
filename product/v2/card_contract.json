@@ -190,9 +190,18 @@
             "modal",
             "toggle",
             "button",
-            "slider"
+            "slider",
+            "card"
           ],
           "defaultValue": "display",
+          "omitDefault": true
+        },
+        {
+          "name": "badge_card_type",
+          "label": "Card Type",
+          "kind": "text",
+          "hidden": true,
+          "docsHidden": true,
           "omitDefault": true
         },
         {

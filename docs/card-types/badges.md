@@ -17,14 +17,17 @@ The row stays one badge high; swipe horizontally if the badges do not all fit.
 1. Open the home screen or subpage in the web editor and click the **+** at the
    end of the badge row. Use **Show badges** if the row is hidden. Each page
    supports up to eight badges.
-2. Choose a **Badge Type** from the table below.
-3. Enter its **Entity** or create its own unique **Subpage**. Open **Badge
-   Settings** for the icon and optional display settings, as with card setup.
-4. Sensors show their Entity's reading. Sliders always show their own value
-   as a whole number, using the entity's unit automatically or a percentage
-   for brightness, fan speed and volume. Other types showing a live value
-   use a **Display Entity**, with optional attribute, unit and decimal places.
-5. Turn on **Lit When Active** if you want the badge to use the active colour.
+2. Choose a type from the same picker used for cards. Availability follows
+   your panel's supported card types.
+3. Configure the entity and controls as you would for that card. For example,
+   Light and Fan badges offer their existing control modes and modal settings.
+   **Badge Settings** contains the icon and other settings for that type.
+4. For a Subpage badge, enter a label and choose **Edit Subpage** to open its
+   own card grid immediately. This saves the badge and its unique page together.
+   **Save** also creates the page, ready to open from the badge later.
+5. Sliders show whole numbers, using the entity's unit automatically or a
+   percentage for brightness and fan speed. Their Home Assistant range and
+   step still determine the values sent to the entity.
 
 Click a badge to select it, then choose **Edit** in the edit bar. Right-click
 a badge or use the bar's **…** menu to edit, duplicate, copy, cut or delete it.
@@ -46,35 +49,33 @@ Badge rows require firmware that supports them. They are included in exported
 configuration backups; update older panels before restoring a backup that
 contains rows.
 
-| Badge Type | Behaviour |
-| --- | --- |
-| Sensor | Shows an entity's reading without an action. |
-| Subpage | Opens its own unique subpage, with a separate editable card grid. |
-| Modal | Opens a supported control card already configured on this panel, including one inside a subpage. Closing it returns to the current page. |
-| Switch | Toggles a light, switch, input boolean, or fan. |
-| Button | Presses a Home Assistant button or input button. |
-| Slider | Drag horizontally to adjust light brightness, fan speed, media volume, a number, or an input number. Sends the new value when you release. |
+Badges support the same types and modes as cards: switches, actions, lights,
+fans, climate, media, sensors, presence, doors and windows, covers, locks,
+garage doors, gates, alarms, vacuum cleaners, lawn mowers, timers, selectors,
+numeric sliders, dates, times, weather, images, Wi-Fi QR codes, webhooks,
+screen locks and panel-specific internal controls. Each badge owns its control
+settings, live state and modal; it does not need a matching card in the grid.
+The compact surface shows an icon beside the card's label or reading.
 
-There is no separate Label badge type. Subpage, Switch, Button and Modal
-badges can show a label; Sensor and Slider badges show live data. Existing
-fixed-text badges remain readable, but editing one requires choosing an entity
-or another type.
+A Subpage badge owns a unique page. Its **Edit Subpage** button uses the same
+card-grid editor as a Subpage card. Reopening or renaming the badge preserves
+its destination and page contents. Existing badge links to ordinary card
+subpages remain supported.
 
-For badges other than sliders, the Display Entity can differ from the action's
-Entity. For example, a badge can show a room temperature while opening that
-room's thermostat modal.
-Numeric helpers use their Home Assistant minimum, maximum and step. Media
-sliders require support for setting volume directly.
+The additional **Modal** type retains the option to open an existing control
+card on the panel, including cards inside a subpage. Badges created with the
+previous Sensor, Switch, Button and Slider setup remain readable and editable.
+There is no separate Label badge type.
+
 Slider badges fit their icon and displayed text, including padding, and resize
 as the live value changes instead of reserving a fixed-width track.
 Both the panel and web preview use the smaller label font, extra padding at the
 right end of each pill, and a solid primary-colour slider fill.
 
-Unknown or unavailable readings show `--`. Toggle and slider controls are
-disabled until their control entity is available; numeric sliders also wait
-for valid range information. An unavailable display sensor does not prevent
-opening a subpage. Home Assistant actions must be enabled for toggles and
-sliders, as with the other control cards.
+Unknown or unavailable readings show `--`. Controls follow the corresponding
+card's availability and Home Assistant capabilities; numeric sliders also
+wait for valid range information. Home Assistant actions must be enabled
+for controls, as with cards. Opening a control modal uses the full modal size.
 
 The web editor uses sample values to preview the layout. Test live values and
 touch interactions on the physical panel.

@@ -3,6 +3,7 @@ import { cardContractDefaultConfig } from "../generated/card_contract";
 import { configOptionEnabled, configOptionValue, setConfigOptionValue } from "../model/config_primitives";
 import { badgeAction, badgeSubtype, normalizeBadgeConfig } from "../model/badge";
 import { iconSlug } from "../application/ui_primitives";
+import { badgeCardType, badgeToCard, cardBadgeUsesSlider } from "../model/badge_card";
 
 export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiServices): void {
   registry.register("badge", {
@@ -108,6 +109,27 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
       }
     },
     renderPreview(button, helpers) {
+      if (badgeCardType(button) !== null) {
+        const card = badgeToCard(button);
+        const definition = registry.definitions[card.type];
+        const preview: { iconHtml?: string; labelHtml?: string } = definition?.renderPreview?.(card, {
+          ...helpers, resolveIcon: (icon: string) => iconSlug(icon || "Home"), cardSize: 1,
+          cardBackgroundColor: "", cardProgressColor: "#ff8c00", cardTextColor: "#fff",
+        }) || {};
+        const sample = document.createElement("div");
+        sample.innerHTML = (preview.iconHtml || "") + (preview.labelHtml || "");
+        const numeric = sample.querySelector(".sp-sensor-value");
+        const text = numeric ? (numeric.textContent || "") + (sample.querySelector(".sp-sensor-unit")?.textContent || "")
+          : sample.querySelector(".sp-media-now-title,.sp-media-cover-details-title,.sp-btn-label")?.textContent || card.label || "Badge";
+        const slider = cardBadgeUsesSlider(card);
+        const label = card.type === "light_temperature" ? "3000K" : slider && card.type !== "media"
+          ? (/^(number|input_number)\./.test(card.entity) ? "35" : "35%") : text;
+        const icon = sample.querySelector(".mdi")?.className.split(/\s+/).filter(name => name === "mdi" || name.startsWith("mdi-")).join(" ")
+          || "mdi mdi-" + iconSlug(card.icon === "Auto" ? "Home" : card.icon);
+        return { buttonClass: "sp-badge-card" + (slider ? " sp-badge-slider" : ""),
+          iconHtml: (slider ? '<span class="sp-badge-fill"></span>' : "") +
+            '<span class="sp-badge-content"><span class="' + helpers.escHtml(icon) + '"></span><span class="sp-badge-text">' + helpers.escHtml(label) + '</span></span>', labelHtml: "" };
+      }
       const action = badgeAction(button);
       const value = action === "slider" || button.precision === "value";
       const decimals = configOptionValue(button.options, "badge_decimals") || "1";

@@ -1,6 +1,8 @@
 import type { CardConfig } from "../contracts/types";
 import { cloneCardConfig } from "../model/card";
 import { badgeAction, badgeSubtype, normalizeBadgeConfig } from "../model/badge";
+import { badgeCardType } from "../model/badge_card";
+import { cardContractDomains, cardContractCard } from "../generated/card_contract";
 import { configOptionEnabled, configOptionValue, setConfigOption, setConfigOptionValue } from "../model/config_primitives";
 import type { ControlsFieldsFeature } from "./controls_fields";
 import type { EntityStateFeature } from "./entity_state";
@@ -25,7 +27,8 @@ export function renderBadgeBulkSettings(panel: HTMLElement, sources: CardConfig[
   const common = (key: keyof CardConfig) => same(sources.map(source => source[key]));
   const commonOption = (key: string) => same(sources.map(source => configOptionValue(source.options, key)));
   const subtype = same(sources.map(badgeSubtype));
-  const editableDisplay = sources.every(source => !["sensor", "button", "slider"].includes(badgeSubtype(source)));
+  const cardType = same(sources.map(badgeCardType));
+  const editableDisplay = sources.every(source => badgeCardType(source) === null && !["sensor", "button", "slider"].includes(badgeSubtype(source)));
   const validators: Array<() => string | null> = [];
   function field(label: string, suffix: string) {
     const wrapper = document.createElement("div");
@@ -74,11 +77,11 @@ export function renderBadgeBulkSettings(panel: HTMLElement, sources: CardConfig[
     input.addEventListener("change", () => { changed(input.value); helpers.onChange(); });
     wrapper.appendChild(input);
   }
-  if (subtype && subtype !== "subpage") {
-    const domains = subtype === "slider" ? ["light", "fan", "number", "input_number", "media_player"]
+  if (subtype && subtype !== "subpage" && (subtype !== "card" || cardType !== undefined)) {
+    const domains = cardType !== null && cardType !== undefined ? cardContractDomains(cardType) : subtype === "slider" ? ["light", "fan", "number", "input_number", "media_player"]
       : subtype === "switch" ? ["light", "switch", "input_boolean", "fan"]
       : subtype === "button" ? ["button", "input_button"] : [];
-    text("Entity", subtype === "sensor" ? "sensor" : "entity", domains);
+    text("Entity", subtype === "sensor" || ["sensor", "local_sensor", "door_window", "presence"].includes(cardType || "") ? "sensor" : "entity", domains);
   }
   if (sources.every(source => !["sensor", "slider"].includes(badgeSubtype(source)))) text("Label", "label");
   panel.appendChild(helpers.iconPickerField("sp-badge-bulk-icon-picker", "sp-badge-bulk-icon", common("icon") || "Auto", value => {
@@ -91,7 +94,7 @@ export function renderBadgeBulkSettings(panel: HTMLElement, sources: CardConfig[
     });
     if (subtype !== "sensor") text("Display Entity", "sensor");
   }
-  if (sources.every(source => !["button", "slider"].includes(badgeSubtype(source)))) {
+  if (sources.every(source => badgeCardType(source) === null && !["button", "slider"].includes(badgeSubtype(source)))) {
     text("Unit (optional)", "unit");
     const { wrapper, id } = field("Attribute (optional)", "attribute");
     const attribute = commonOption("badge_attribute");
@@ -102,7 +105,8 @@ export function renderBadgeBulkSettings(panel: HTMLElement, sources: CardConfig[
       if (value === "__keep") optionEdits.delete("badge_decimals"); else optionEdits.set("badge_decimals", value);
     });
   }
-  if (sources.every(source => badgeSubtype(source) !== "button")) {
+  if (sources.every(source => badgeCardType(source) === null ? badgeSubtype(source) !== "button"
+    : cardContractCard(badgeCardType(source))?.options?.some(option => option.name === "active_color"))) {
     const active = same(sources.map(source => configOptionEnabled(source.options, "active_color")));
     const toggle = fields.toggleRow(active === undefined ? "Lit When Active (multiple values)" : "Lit When Active", "sp-badge-bulk-active", active === true);
     toggle.input.indeterminate = active === undefined;

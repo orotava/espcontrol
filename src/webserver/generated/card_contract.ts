@@ -195,9 +195,18 @@ export const CARD_CONTRACT_CARDS: Readonly<Record<string, CardTypeSpec>> = {
           "modal",
           "toggle",
           "button",
-          "slider"
+          "slider",
+          "card"
         ],
         "defaultValue": "display",
+        "omitDefault": true
+      },
+      {
+        "name": "badge_card_type",
+        "label": "Card Type",
+        "kind": "text",
+        "hidden": true,
+        "docsHidden": true,
         "omitDefault": true
       },
       {
@@ -4874,6 +4883,7 @@ export const CARD_CONTRACT_OPTION_NAMES: Readonly<Record<string, string>> = {
   "alarm_card_type": "alarm_card_type",
   "badge_action": "badge_action",
   "badge_attribute": "badge_attribute",
+  "badge_card_type": "badge_card_type",
   "badge_decimals": "badge_decimals",
   "badge_page": "badge_page",
   "center_clock": "center_clock",

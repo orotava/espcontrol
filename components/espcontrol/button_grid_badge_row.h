@@ -1,6 +1,18 @@
 #pragma once
 #include "badge_row_config.h"
 
+inline std::array<bool, 33> badge_subpage_destinations() {
+  std::array<bool, 33> destinations{};
+  for (int page = 0; page <= 32; ++page) {
+    for (const auto &badge : parse_subpage_config(espcontrol::badge::configuration().page(page))) {
+      if (badge.type != "badge" || cfg_option_value(badge.options, "badge_action") != "subpage") continue;
+      const int target = atoi(cfg_option_value(badge.options, "badge_page").c_str());
+      if (target > 0 && target <= 32) destinations[target] = true;
+    }
+  }
+  return destinations;
+}
+
 inline void badge_row_remove(lv_obj_t *page) {
   for (const auto &entry : page_badge_rows()) {
     if (entry.page != page) continue;
@@ -54,6 +66,7 @@ inline void badge_row_build(lv_obj_t *page, int page_index,
   lv_obj_add_event_cb(row, [](lv_event_t *event) {
     auto &rows = page_badge_rows();
     const auto target = static_cast<lv_obj_t *>(lv_event_get_target(event));
+    screen_lock_unregister_tree(target);
     rows.erase(std::remove_if(rows.begin(), rows.end(), [target](const PageBadgeRow &item) {
       return item.row == target;
     }), rows.end());
@@ -76,9 +89,13 @@ inline void badge_row_build(lv_obj_t *page, int page_index,
     BtnSlot slot = create_dynamic_card_slot(button, display_icon_font(display), display_sensor_font(display), font,
       lv_obj_get_style_text_color(reference.btn, LV_PART_MAIN), cfg.subpage_chevron_font);
     espcontrol::cards::badge_driver_setup_visual(slot, config, context, display);
+    auto *badge_context = espcontrol::cards::badge_context(button);
+    if (badge_context && badge_context->card_mode) {
+      espcontrol::cards::badge_card_runtime_queue(badge_context, config, cfg, palette, reference);
+    }
     espcontrol::cards::badge_driver_fit_width(slot.btn);
     espcontrol::cards::badge_driver_bind_subpage(slot, config, context, {});
-    screen_lock_register_controlled_button(button);
+    if (cfg_option_value(config.options, "badge_card_type") != "screen_lock") screen_lock_register_controlled_button(button);
     page_badge_rows().back().buttons.push_back(button);
   }
   lv_obj_update_layout(page);
