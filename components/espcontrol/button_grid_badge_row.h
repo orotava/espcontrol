@@ -26,8 +26,8 @@ inline void badge_row_build(lv_obj_t *page, int page_index,
   const lv_font_t *font = lv_obj_get_style_text_font(reference.text_lbl, LV_PART_MAIN);
   const lv_coord_t line = font ? font->line_height : 24;
   const lv_coord_t height = line * 2;
-  const lv_coord_t gap = line / 3;
-  const lv_coord_t inset = height + gap;
+  const lv_coord_t vertical_gap = line / 3;
+  const lv_coord_t inset = height + vertical_gap * 2;
   const lv_coord_t top = lv_obj_get_style_pad_top(page, LV_PART_MAIN);
   lv_obj_t *row = lv_obj_create(page);
   lv_obj_remove_style_all(row);
@@ -60,7 +60,7 @@ inline void badge_row_build(lv_obj_t *page, int page_index,
   }, LV_EVENT_DELETE, nullptr);
   lv_obj_set_style_pad_top(page, top + inset, LV_PART_MAIN);
   // Position is relative to the new content origin beneath the row.
-  lv_obj_set_pos(row, 0, -inset);
+  lv_obj_set_pos(row, 0, -inset + vertical_gap);
   lv_obj_update_layout(page);
   for (const auto &badge : badges) {
     ParsedCfg config = parsed_cfg_from_subpage_btn(badge);
