@@ -12,12 +12,12 @@ int main() {
   assert(slider_value_text(std::numeric_limits<double>::infinity()) == "--");
   assert(slider_value_text(std::numeric_limits<double>::max()).size() == 309);
   assert(slider_value_text(-std::numeric_limits<double>::max()).size() == 310);
-  assert(content_left_padding(24) > content_right_padding(24));
+  assert(content_left_padding(24) < content_right_padding(24));
   assert(width_for_text(24, 20, false) == 108);
-  assert(width_for_text(24, 20, true) == 88);
-  assert(width_for_text(24, 40, true) == 108);
-  assert(width_for_text(24, 150, false) == 218);
-  assert(width_for_text(24, 150, true) == 218);
+  assert(width_for_text(24, 20, true) == 89);
+  assert(width_for_text(24, 40, true) == 109);
+  assert(width_for_text(24, 150, false) == 219);
+  assert(width_for_text(24, 150, true) == 219);
   assert(toggle_checked(true, true));
   assert(!toggle_checked(true, false));
   assert(!toggle_checked(false, true));

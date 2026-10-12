@@ -18,6 +18,11 @@
           "battery": "!include device/battery.yaml"
         }
       }
+    },
+    "web": {
+      "btn": {
+        "badgeLabelScale": 0.8333333333333334
+      }
     }
   },
   "overrides": {

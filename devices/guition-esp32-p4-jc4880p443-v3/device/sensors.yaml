@@ -67,6 +67,7 @@ script:
           cfg.volume_number_font = id(font_number_value_large)->get_lv_font();
           cfg.volume_number_compact_font = id(font_clock_display)->get_lv_font();
           cfg.volume_label_font = id(font_text_body)->get_lv_font();
+          cfg.badge_label_font = id(font_text_small)->get_lv_font();
           cfg.climate_card_icon_font = id(font_icon_card)->get_lv_font();
           cfg.subpage_chevron_font = id(font_icon_status)->get_lv_font();
           cfg.climate_option_title_font = id(font_text_body)->get_lv_font();
@@ -218,6 +219,7 @@ script:
           cfg.volume_number_font = id(font_number_value_large)->get_lv_font();
           cfg.volume_number_compact_font = id(font_clock_display)->get_lv_font();
           cfg.volume_label_font = id(font_text_body)->get_lv_font();
+          cfg.badge_label_font = id(font_text_small)->get_lv_font();
           cfg.climate_card_icon_font = id(font_icon_card)->get_lv_font();
           cfg.subpage_chevron_font = id(font_icon_status)->get_lv_font();
           cfg.climate_option_title_font = id(font_text_body)->get_lv_font();
@@ -408,6 +410,7 @@ esphome:
             cfg.volume_number_font = id(font_number_value_large)->get_lv_font();
             cfg.volume_number_compact_font = id(font_clock_display)->get_lv_font();
             cfg.volume_label_font = id(font_text_body)->get_lv_font();
+            cfg.badge_label_font = id(font_text_small)->get_lv_font();
             cfg.climate_card_icon_font = id(font_icon_card)->get_lv_font();
             cfg.subpage_chevron_font = id(font_icon_status)->get_lv_font();
             cfg.climate_option_title_font = id(font_text_body)->get_lv_font();
@@ -550,6 +553,7 @@ esphome:
             cfg.volume_number_font = id(font_number_value_large)->get_lv_font();
             cfg.volume_number_compact_font = id(font_clock_display)->get_lv_font();
             cfg.volume_label_font = id(font_text_body)->get_lv_font();
+            cfg.badge_label_font = id(font_text_small)->get_lv_font();
             cfg.climate_card_icon_font = id(font_icon_card)->get_lv_font();
             cfg.subpage_chevron_font = id(font_icon_status)->get_lv_font();
             cfg.climate_option_title_font = id(font_text_body)->get_lv_font();

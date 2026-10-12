@@ -15,6 +15,11 @@
     "public": {
       "name": "Guition JC1060P470",
       "docsPath": "/screens/jc1060p470"
+    },
+    "web": {
+      "btn": {
+        "badgeLabelScale": 0.8181818181818182
+      }
     }
   },
   "overrides": {

@@ -179,12 +179,10 @@ inline bool badge_driver_refresh_layout(BtnSlot &slot, const ParsedCfg &, const 
   if (!badge_driver_matches(context)) return false;
   BadgeCtx *ctx = badge_context(slot.btn);
   if (!ctx) return true;
-  const lv_font_t *font = lv_obj_get_style_text_font(ctx->value_label, LV_PART_MAIN);
-  const lv_coord_t line = font ? font->line_height : 24;
   clock_bar_unregister_responsive_grid_card(slot.btn);
   lv_obj_set_style_grid_cell_x_align(slot.btn, LV_GRID_ALIGN_STRETCH, LV_PART_MAIN);
   lv_obj_set_style_grid_cell_y_align(slot.btn, LV_GRID_ALIGN_CENTER, LV_PART_MAIN);
-  lv_obj_set_height(slot.btn, line * 2);
+  lv_obj_set_height(slot.btn, ctx->line_height * 2);
   lv_obj_set_style_radius(slot.btn, LV_RADIUS_CIRCLE, LV_PART_MAIN);
   return true;
 }
@@ -220,7 +218,7 @@ inline bool badge_driver_setup_visual(BtnSlot &slot, const ParsedCfg &config,
     lv_obj_set_style_radius(ctx->slider, LV_RADIUS_CIRCLE, LV_PART_MAIN);
     lv_obj_set_style_radius(ctx->slider, LV_RADIUS_CIRCLE, LV_PART_INDICATOR);
     lv_obj_set_style_bg_color(ctx->slider, lv_color_hex(current_button_primary_color()), LV_PART_INDICATOR);
-    lv_obj_set_style_bg_opa(ctx->slider, LV_OPA_30, LV_PART_INDICATOR);
+    lv_obj_set_style_bg_opa(ctx->slider, LV_OPA_COVER, LV_PART_INDICATOR);
     lv_obj_clear_flag(ctx->slider, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_set_user_data(ctx->slider, ctx);
     lv_slider_set_range(ctx->slider, 0, 100);
@@ -290,7 +288,8 @@ inline bool badge_driver_setup_visual(BtnSlot &slot, const ParsedCfg &config,
   lv_obj_set_style_transform_scale_x(icon, scale, LV_PART_MAIN);
   lv_obj_set_style_transform_scale_y(icon, scale, LV_PART_MAIN);
   ctx->value_label = lv_label_create(ctx->content);
-  if (label_font) lv_obj_set_style_text_font(ctx->value_label, label_font, LV_PART_MAIN);
+  const lv_font_t *badge_font = display_badge_label_font(display, label_font);
+  if (badge_font) lv_obj_set_style_text_font(ctx->value_label, badge_font, LV_PART_MAIN);
   display_apply_text_width(ctx->value_label, display);
   lv_obj_set_flex_grow(ctx->value_label, 1);
   lv_label_set_long_mode(ctx->value_label, LV_LABEL_LONG_DOT);

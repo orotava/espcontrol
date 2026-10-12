@@ -70,7 +70,8 @@
         "coverArtTitleSize": 7.375,
         "coverArtArtistSize": 5,
         "labelLines": 2,
-        "labelLinesDouble": 3
+        "labelLinesDouble": 3,
+        "badgeLabelScale": 0.8620689655172413
       },
       "emptyCell": {
         "radius": 1.18

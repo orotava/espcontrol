@@ -62,6 +62,7 @@ function casesFromManifest() {
       name: `${orientation}-${slug}`,
       slug,
       slots: device.slots,
+      badgeLabelScale: device.web.btn.badgeLabelScale || .9,
       viewport: viewportFor(aspect.ratio),
       coverArtSquareOverlay: !!(device.web && device.web.coverArtSquareOverlay),
       mediaCoverArtSupported: !(
@@ -6473,16 +6474,16 @@ async function assertBadgeJourney(browser, testCase) {
       "Long badge labels expand their pill instead of wrapping or clipping");
     assert(geometry.aboveGrid, "The short row sits above the full card grid");
     assert(Math.abs(geometry.gridGap - geometry.expectedGridGap) < 2, "The web preview leaves extra space between badges and cards");
-    const typography = await page.locator(".sp-badge-text").first().evaluate(text => {
+    const typography = await page.locator(".sp-badge-text").first().evaluate((text, badgeLabelScale) => {
       const badge = getComputedStyle(text);
       const label = getComputedStyle(document.querySelector(".sp-main .sp-btn-label"));
       const pill = text.closest(".sp-badge-card");
       const icon = getComputedStyle(pill.querySelector(".mdi"));
       return { matching: badge.fontFamily === label.fontFamily && badge.fontWeight === label.fontWeight &&
-          Math.abs(parseFloat(badge.fontSize) / parseFloat(label.fontSize) - 0.9) < 0.01,
+          Math.abs(parseFloat(badge.fontSize) / parseFloat(label.fontSize) - badgeLabelScale) < 0.01,
         height: pill.getBoundingClientRect().height, labelSize: parseFloat(label.fontSize), iconSize: parseFloat(icon.fontSize),
         paddingLeft: parseFloat(getComputedStyle(pill).paddingLeft), paddingRight: parseFloat(getComputedStyle(pill).paddingRight) };
-    });
+    }, testCase.badgeLabelScale);
     assert(typography.matching, "Badge text uses the same font and weight as card labels at a slightly smaller size");
     assert(typography.height <= typography.labelSize * 2.4 + 1 && typography.iconSize <= typography.labelSize * 1.2 + 1, "Badge and icon sizes match the device line-height proportions");
     assert(typography.paddingRight > typography.paddingLeft, "Badges have extra padding on their right side");

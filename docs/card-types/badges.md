@@ -66,6 +66,8 @@ Numeric helpers use their Home Assistant minimum, maximum and step. Media
 sliders require support for setting volume directly.
 Slider badges fit their icon and displayed text, including padding, and resize
 as the live value changes instead of reserving a fixed-width track.
+Both the panel and web preview use the smaller label font, extra padding at the
+right end of each pill, and a solid primary-colour slider fill.
 
 Unknown or unavailable readings show `--`. Toggle and slider controls are
 disabled until their control entity is available; numeric sliders also wait

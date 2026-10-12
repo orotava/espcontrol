@@ -20,11 +20,11 @@ inline std::string slider_value_text(double value) {
 }
 
 inline int content_left_padding(int line_height) {
-  return line_height * 9 / 10;
+  return line_height * 2 / 3;
 }
 
 inline int content_right_padding(int line_height) {
-  return line_height * 13 / 20;
+  return line_height * 9 / 10;
 }
 
 inline int width_for_text(int line_height, int text_width, bool slider) {

@@ -356,7 +356,8 @@
             "climateCardIcon": "font_icon_card",
             "subpageChevron": "font_icon_status",
             "climateOptionTitle": "font_text_body",
-            "climateOptionValue": "font_text_body"
+            "climateOptionValue": "font_text_body",
+            "badgeLabel": "font_text_small"
           },
           "package": {
             "deviceFontPackageKey": "fonts_device"
@@ -379,7 +380,8 @@
             "climateCardIcon": "font_icon_card",
             "subpageChevron": "font_icon_status",
             "climateOptionTitle": "font_text_body",
-            "climateOptionValue": "font_text_body"
+            "climateOptionValue": "font_text_body",
+            "badgeLabel": "font_text_small"
           },
           "package": {
             "deviceFontPackageKey": "fonts_lg"
@@ -401,7 +403,8 @@
             "climateCardIcon": "font_icon_card",
             "subpageChevron": "font_icon_status",
             "climateOptionTitle": "font_text_body",
-            "climateOptionValue": "font_text_body"
+            "climateOptionValue": "font_text_body",
+            "badgeLabel": "font_text_small"
           },
           "package": {
             "deviceFontPackageKey": "fonts_device"
@@ -546,6 +549,11 @@
         "public": {
           "name": "Guition JC1060P470",
           "docsPath": "/screens/jc1060p470"
+        },
+        "web": {
+          "btn": {
+            "badgeLabelScale": 0.8181818181818182
+          }
         }
       },
       "overrides": {
@@ -579,6 +587,11 @@
         "public": {
           "name": "Guition JC1060P470 new panel (V2 label)",
           "docsPath": "/screens/jc1060p470-v2"
+        },
+        "web": {
+          "btn": {
+            "badgeLabelScale": 0.8181818181818182
+          }
         }
       },
       "overrides": {
@@ -664,7 +677,8 @@
             "coverArtTitleSize": 7.375,
             "coverArtArtistSize": 5,
             "labelLines": 2,
-            "labelLinesDouble": 3
+            "labelLinesDouble": 3,
+            "badgeLabelScale": 0.8620689655172413
           },
           "emptyCell": {
             "radius": 1.18
@@ -834,7 +848,8 @@
             "coverArtTitleSize": 7.375,
             "coverArtArtistSize": 5,
             "labelLines": 2,
-            "labelLinesDouble": 3
+            "labelLinesDouble": 3,
+            "badgeLabelScale": 0.8620689655172413
           },
           "emptyCell": {
             "radius": 1.18
@@ -952,6 +967,11 @@
               "battery": "!include device/battery.yaml"
             }
           }
+        },
+        "web": {
+          "btn": {
+            "badgeLabelScale": 0.8333333333333334
+          }
         }
       },
       "overrides": {
@@ -977,6 +997,11 @@
         "public": {
           "name": "Guition JC8012P4A1 new panel (2628+)",
           "docsPath": "/screens/jc8012p4a1-v2"
+        },
+        "web": {
+          "btn": {
+            "badgeLabelScale": 0.8333333333333334
+          }
         }
       },
       "overrides": {
@@ -1009,6 +1034,9 @@
         "web": {
           "portrait": {
             "slots": 18
+          },
+          "btn": {
+            "badgeLabelScale": 0.8333333333333334
           }
         }
       },
@@ -1111,7 +1139,8 @@
             "coverArtTitleSize": 14.583333,
             "coverArtArtistSize": 8.333333,
             "labelLines": 2,
-            "labelLinesDouble": 3
+            "labelLinesDouble": 3,
+            "badgeLabelScale": 0.8181818181818182
           },
           "emptyCell": {
             "radius": 1.67
@@ -1301,7 +1330,8 @@
             "coverArtTitleSize": 14.583333,
             "coverArtArtistSize": 8.333333,
             "labelLines": 2,
-            "labelLinesDouble": 3
+            "labelLinesDouble": 3,
+            "badgeLabelScale": 0.8181818181818182
           },
           "emptyCell": {
             "radius": 1.67
