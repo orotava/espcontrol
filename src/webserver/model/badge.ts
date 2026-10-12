@@ -39,7 +39,7 @@ export function normalizeBadgeConfig(button: CardConfig): void {
   let options = action === "display" ? "" : setConfigOptionValue("", "badge_action", action);
   if (action === "subpage") {
     const page = configOptionValue(source, "badge_page");
-    if (/^[1-9]\d?$/.test(page) && Number(page) <= 25) options = setConfigOptionValue(options, "badge_page", page);
+    if (/^[1-9]\d?$/.test(page) && Number(page) <= 32) options = setConfigOptionValue(options, "badge_page", page);
   }
   for (const key of ["badge_attribute", "badge_decimals"]) {
     const value = configOptionValue(source, key).trim();

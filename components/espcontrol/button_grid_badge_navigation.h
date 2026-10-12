@@ -4,9 +4,8 @@
 // its label or rearranging the home screen does not break the shortcut.
 inline bool badge_open_subpage(int slot) {
   if (!grid_phase2_complete() || screen_lock_enabled() || alarm_display_takeover_active()) return false;
-  const auto *parent = navigation_find_slot_target(slot);
   const auto *page = navigation_find_slot(slot);
-  if (!parent || parse_cfg(parent->config).type != "subpage" || !page || !page->screen) {
+  if (!page || !page->screen) {
     ESP_LOGW("badge", "Subpage destination %d is no longer available", slot);
     return false;
   }

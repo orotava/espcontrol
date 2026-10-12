@@ -3,8 +3,8 @@
 #include "badge_policy.h"
 
 // Badge visuals own their context through the content object's delete event.
-// The same driver serves the home grid and subpages. Navigation and modal
-// routes below resolve existing panel targets without creating extra screens.
+// The same driver serves the home grid and subpages. Badge navigation resolves
+// a page by its stable slot, including pages reserved exclusively for badges.
 inline bool espcontrol_open_modal(const std::string &entity_id, bool ui_ready);
 inline bool badge_open_subpage(int slot);
 

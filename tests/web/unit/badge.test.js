@@ -43,8 +43,11 @@ test("badge subtypes select the correct behaviour without a Label type", () => {
   assert(!momentary.options.includes("active_color"), "Momentary buttons do not retain switch colouring");
 });
 
-test("badge drops invalid destinations and falls back to display for unknown actions", () => {
-  for (const page of ["0", "26", "-1", "6oops", "6.1"]) {
+test("badge keeps panel-wide page destinations, drops invalid ones, and falls back for unknown actions", () => {
+  const highestPage = badge("badge_action=subpage,badge_page=32");
+  normalizeBadgeConfig(highestPage);
+  assert.equal(configOptionValue(highestPage.options, "badge_page"), "32");
+  for (const page of ["0", "33", "-1", "6oops", "6.1"]) {
     const button = badge("badge_action=subpage,badge_page=" + page);
     normalizeBadgeConfig(button);
     assert.equal(configOptionValue(button.options, "badge_page"), "");

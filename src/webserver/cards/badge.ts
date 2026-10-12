@@ -1,5 +1,4 @@
 import type { CardRegistry, CardUiServices } from "../application/card_registry";
-import { state } from "../state/app_instance";
 import { cardContractDefaultConfig } from "../generated/card_contract";
 import { configOptionEnabled, configOptionValue, setConfigOptionValue } from "../model/config_primitives";
 import { BADGE_SUBTYPES, badgeAction, badgeSubtype, normalizeBadgeConfig, setBadgeSubtype, type BadgeSubtype } from "../model/badge";
@@ -68,15 +67,12 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
       helpers.markCardPrimaryField(type.parentElement, "type");
       if (subtype !== "sensor" && button.precision !== "value") text("Label", "label", "e.g. Kitchen");
       if (action === "subpage") {
-        const pages: Array<[string, string]> = [["", "Choose a subpage…"]];
-        state.buttons.forEach((entry, index) => {
-          if (entry.type === "subpage") pages.push([String(index + 1), entry.label || "Subpage " + (index + 1)]);
-        });
-        const current = configOptionValue(button.options, "badge_page");
-        if (current && !pages.some(([key]) => key === current)) pages.push([current, "Missing subpage (slot " + current + ")"]);
-        const picker = select("Subpage", "badge-page", current, pages, value => option("badge_page", value));
-        helpers.markCardPrimaryField(picker.parentElement, "entity");
-        helpers.requireField(picker, "Choose a subpage before saving.");
+        if (helpers.badgeSubpageSettings) helpers.badgeSubpageSettings(panel, button);
+        else {
+          const current = configOptionValue(button.options, "badge_page");
+          const picker = select("Subpage", "badge-page", current, [[current, current ? "Existing page " + current : "No page"]], value => option("badge_page", value));
+          helpers.markCardPrimaryField(picker.parentElement, "entity");
+        }
       } else if (subtype === "sensor") {
         const input = text("Entity", "sensor", "e.g. sensor.kitchen_temperature", [], true);
         input.addEventListener("input", () => { button.precision = "value"; helpers.saveField("precision", "value"); });

@@ -20,6 +20,7 @@ const MANIFEST_PATH = path.join(ROOT, "devices", "manifest.json");
 const WEB_OUTPUT_DIR = freshWebOutputDir();
 const FAILURE_DIR = path.join(ROOT, ".cache", "web-browser-smoke");
 const { serializeBadgeRow, parseBadgeRow } = loadTypeScriptModule(path.join(ROOT, "src/webserver/model/badge_row.ts"));
+const { configOptionValue } = loadTypeScriptModule(path.join(ROOT, "src/webserver/model/config_primitives.ts"));
 
 function readManifest() {
   return JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf8"));
@@ -6461,19 +6462,46 @@ async function assertBadgeJourney(browser, testCase) {
     assert.strictEqual(await page.locator("#sp-badge-inp-entity").inputValue(), "climate.kitchen");
     assert.strictEqual(await page.locator("#sp-badge-inp-sensor").inputValue(), "sensor.kitchen_temperature");
     await page.locator("#sp-badge-inp-badge-type").selectOption("subpage");
-    await page.locator("#sp-badge-inp-badge-page").selectOption("3");
+    await dialog.getByRole("button", { name: "Create unique page", exact: true }).click();
+    await waitForNativeState(nativeState, () => !!nativeState.document.buttons[7] && !!nativeState.document.subpages[7], "Create first badge-owned page");
     await dialog.getByRole("button", { name: "Save", exact: true }).click();
     await dialog.waitFor({ state: "hidden" });
     const written = parseBadgeRow(nativeState.document.settings.badge_row_0)[0];
     assert.equal(written.sensor, "sensor.kitchen_temperature");
-    assert(written.options.includes("badge_page=3"));
-    assert.equal(JSON.stringify(nativeState.document.buttons), originalButtons);
+    assert(written.options.includes("badge_page=7"));
+    assert(nativeState.document.buttons[3], "The unique badge page does not replace the existing card subpage");
     assert.equal(nativeState.document.settings.button_order, originalOrder);
     assert.equal(await page.locator(".sp-main [data-pos]").count(), gridCount, "Adding a row preserves every grid cell");
     // Row order is independent of card order.
     await page.locator('.sp-badge-row [data-badge-index="4"]').dragTo(page.locator('.sp-badge-row [data-badge-index="0"]'), { targetPosition: { x: 1, y: 16 } });
     await waitForNativeState(nativeState, () => parseBadgeRow(nativeState.document.settings.badge_row_0)[0]?.label === "2 open", "Badge drag reorder");
     assert.equal(parseBadgeRow(nativeState.document.settings.badge_row_0)[0].label, "2 open");
+    // A subpage badge can create a dedicated page instead of reusing an
+    // existing home-screen subpage.
+    const existingSubpageIndex = parseBadgeRow(nativeState.document.settings.badge_row_0)
+      .findIndex(item => configOptionValue(item.options, "badge_page") === "3");
+    assert(existingSubpageIndex >= 0, "The fixture retains a badge linked to the existing card subpage");
+    const existingSubpageBadge = page.locator(`.sp-badge-row [data-badge-index="${existingSubpageIndex}"]`);
+    await existingSubpageBadge.click();
+    await page.locator(".sp-selection-bar").getByRole("button", { name: "Edit", exact: true }).click();
+    const createUniquePageButton = dialog.getByRole("button", { name: /Create (another )?unique page/ });
+    assert.equal(await createUniquePageButton.count(), 1, await dialog.innerText());
+    const priorButtonSlots = new Set(Object.keys(nativeState.document.buttons));
+    await createUniquePageButton.click();
+    await waitForNativeState(nativeState, () => Object.keys(nativeState.document.buttons).some(slot => !priorButtonSlots.has(slot)), "Create badge-owned page");
+    const uniquePageSlot = Number(Object.keys(nativeState.document.buttons).find(slot => !priorButtonSlots.has(slot)));
+    assert.equal(nativeState.document.settings.button_order, originalOrder, "The badge-owned page does not take a card-grid slot");
+    await dialog.getByRole("button", { name: "Save", exact: true }).click();
+    await dialog.waitFor({ state: "hidden" });
+    assert.equal(configOptionValue(parseBadgeRow(nativeState.document.settings.badge_row_0)[existingSubpageIndex].options, "badge_page"), String(uniquePageSlot));
+    assert.notEqual(uniquePageSlot, 3, "The badge receives a page independent of the existing card subpage");
+    assert.notEqual(uniquePageSlot, 7, "Each badge can create a different page");
+    assert(nativeState.document.buttons[3], "Creating a unique page leaves the existing subpage in place");
+    await page.locator(`.sp-badge-row [data-badge-index="${existingSubpageIndex}"]`).click();
+    await page.locator(".sp-selection-bar").getByRole("button", { name: "Edit", exact: true }).click();
+    await dialog.getByRole("button", { name: "Edit page cards", exact: true }).click();
+    assert(await page.locator(".sp-back-btn").isVisible(), "The badge has its own editable card grid");
+    await page.locator(".sp-back-btn .sp-back-hit").click();
     // A subpage gets its own row without changing its Back card or card list.
     await page.locator('.sp-main [data-slot="3"] .sp-subpage-badge').click();
     await addBadgeButton.click();
@@ -6481,11 +6509,15 @@ async function assertBadgeJourney(browser, testCase) {
     assert.equal(await dialog.locator('[data-badge-type]').count(), 6);
     if (process.env.ESPCONTROL_BADGE_TYPE_SCREENSHOT) await dialog.locator(".sp-settings-modal").screenshot({ path: process.env.ESPCONTROL_BADGE_TYPE_SCREENSHOT });
     await dialog.locator('[data-badge-type="subpage"]').click();
-    await page.locator("#sp-badge-inp-badge-page").selectOption("3");
+    const occupiedPageSlots = new Set(Object.keys(nativeState.document.buttons));
+    await dialog.getByRole("button", { name: "Create unique page", exact: true }).click();
+    await waitForNativeState(nativeState, () => Object.keys(nativeState.document.buttons).some(slot => !occupiedPageSlots.has(slot)), "Create nested badge-owned page");
+    const nestedBadgePageSlot = Number(Object.keys(nativeState.document.buttons).find(slot => !occupiedPageSlots.has(slot)));
     await page.locator("#sp-badge-inp-label").fill("Upstairs");
     await dialog.getByRole("button", { name: "Save", exact: true }).click();
     await dialog.waitFor({ state: "hidden" });
     assert.equal(parseBadgeRow(nativeState.document.settings.badge_row_3)[0].label, "Upstairs");
+    assert.equal(configOptionValue(parseBadgeRow(nativeState.document.settings.badge_row_3)[0].options, "badge_page"), String(nestedBadgePageSlot));
     assert.equal(await page.locator(".sp-badge-row .sp-badge-card").count(), 1);
     // Exercise actual entity entry from a new badge, with a grid card already
     // selected. Typing or choosing suggestions must not reset the badge editor.
@@ -6494,7 +6526,7 @@ async function assertBadgeJourney(browser, testCase) {
     assert(!(await badgeBarControl.isVisible()), "The badge-bar control is removed when a card is selected");
     async function addTypedBadge(type) {
       if (!(await badgeBarControl.isVisible())) {
-        await page.locator(".sp-hint").click();
+        await page.locator("#sp-screen > .sp-hint").click();
         await badgeBarControl.waitFor({ state: "visible" });
       }
       await addBadgeButton.click();
