@@ -79,12 +79,12 @@ export function createWebStyles(dragAnimation: boolean): string {
         "display:grid;grid-template-columns:var(--grid-cols);grid-template-rows:var(--grid-rows);gap:var(--grid-gap);overflow:hidden}" +
         ".sp-main.sp-grid-loading{visibility:hidden;opacity:0;pointer-events:none;transition:opacity .2s,visibility .2s}" +
         ".sp-badge-row{position:absolute;top:var(--grid-top);left:var(--grid-left);right:var(--grid-right);height:calc(var(--btn-label)*2.4);display:flex;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}" +
-        ".sp-badge-row-items{display:flex;flex:none;width:max-content;min-width:100%;justify-content:center;box-sizing:border-box;padding-right:calc(var(--btn-label)*.6)}" +
+        ".sp-badge-row-items{position:relative;display:flex;flex:none;width:max-content;min-width:100%;justify-content:center;box-sizing:border-box;padding-right:calc(var(--btn-label)*.6)}" +
         ".sp-badge-row[hidden]{display:none}.sp-badge-row::-webkit-scrollbar{display:none}" +
         ".sp-badge-row .sp-btn{flex:none;margin-left:calc(var(--btn-label)*.6)}" +
         ".sp-badge-row .sp-btn.sp-badge-card{min-width:calc(var(--btn-label)*5.4);padding:0 calc(var(--btn-label)*1.08) 0 calc(var(--btn-label)*.78)}" +
         ".sp-badge-row .sp-badge-card{cursor:grab;user-select:none}.sp-badge-row .sp-badge-card.sp-dragging{opacity:.4}" +
-        ".sp-badge-row .sp-badge-card.sp-drop-target{box-shadow:0 0 0 2px var(--accent)}" +
+        ".sp-badge-insertion-marker{position:absolute;top:10%;height:80%;width:3px;border-radius:2px;background:var(--accent);transform:translateX(-50%);pointer-events:none;z-index:3}.sp-badge-insertion-marker[hidden]{display:none}" +
         ".sp-badge-row .sp-badge-add{align-self:center;height:calc(var(--btn-label)*2.4);min-height:0;width:calc(var(--btn-label)*2.4);min-width:calc(var(--btn-label)*2.4);max-width:calc(var(--btn-label)*2.4);padding:0;border:1px dashed var(--preview-border);border-radius:999px;background:transparent!important;display:flex;align-items:center;justify-content:center;transition:border-color .2s,background-color .2s}" +
         ".sp-badge-row .sp-badge-add:hover:not(:disabled){border-color:var(--accent-hover);background:var(--accent-soft)!important}" +
         ".sp-badge-row .sp-badge-add .mdi{font-size:calc(var(--btn-label)*1.2)}.sp-badge-row .sp-badge-add:disabled{opacity:.45;cursor:not-allowed}" +

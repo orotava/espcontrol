@@ -6639,7 +6639,51 @@ async function assertBadgeJourney(browser, testCase) {
     assert.equal(nativeState.document.settings.button_order, originalOrder);
     assert.equal(await page.locator(".sp-main [data-pos]").count(), gridCount, "Adding a row preserves every grid cell");
     // Row order is independent of card order.
-    await page.locator('.sp-badge-row [data-badge-index="4"]').dragTo(page.locator('.sp-badge-row [data-badge-index="0"]'), { targetPosition: { x: 1, y: 16 } });
+    async function insertBadge(from, insertion, cancel = false) {
+      const before = parseBadgeRow(nativeState.document.settings.badge_row_0);
+      const writes = nativeState.puts.length;
+      const source = page.locator('.sp-badge-row [data-badge-index="' + from + '"]');
+      const bounds = await source.boundingBox();
+      await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(bounds.x + bounds.width / 2 + 10, bounds.y + bounds.height / 2, { steps: 5 });
+      const target = await page.locator(".sp-badge-row").evaluate((row, insertion) => {
+        const items = row.querySelectorAll("[data-badge-index]");
+        const before = items[insertion - 1]?.getBoundingClientRect();
+        const after = (items[insertion] || row.querySelector(".sp-badge-add")).getBoundingClientRect();
+        const x = before ? (before.right + after.left) / 2
+          : after.left - parseFloat(getComputedStyle(items[0]).marginLeft) / 2;
+        const bounds = row.getBoundingClientRect();
+        return { x, y: bounds.top + bounds.height / 2 };
+      }, insertion);
+      await page.mouse.move(target.x, target.y, { steps: 10 });
+      await page.mouse.move(target.x, target.y);
+      const marker = page.locator(".sp-badge-insertion-marker");
+      await marker.waitFor({ state: "visible" });
+      assert.equal(await marker.getAttribute("data-insertion-index"), String(insertion), "The marker names the insertion boundary");
+      const markerBounds = await marker.boundingBox();
+      assert(Math.abs(markerBounds.x + markerBounds.width / 2 - target.x) < 2, "The insertion line sits in the gap");
+      assert.equal(await page.locator(".sp-badge-card.sp-drop-target").count(), 0, "Dragging does not highlight a badge as a swap target");
+      assert(await page.evaluate(({ x, y }) => !document.elementFromPoint(x, y).closest("[data-badge-index]"), target),
+        "The drop point is between badges, outside a badge");
+      if (cancel) await page.mouse.move(target.x, target.y + 150, { steps: 5 });
+      await page.mouse.up();
+      const destination = from < insertion ? insertion - 1 : insertion;
+      const expected = before.slice();
+      if (!cancel) expected.splice(destination, 0, expected.splice(from, 1)[0]);
+      await waitForNativeState(nativeState, () => JSON.stringify(parseBadgeRow(nativeState.document.settings.badge_row_0)) === JSON.stringify(expected), "Insert badge at boundary " + insertion);
+      assert(!(await marker.isVisible()), "The insertion marker clears after drop or cancellation");
+      assert.equal(await page.locator(".sp-badge-card.sp-dragging").count(), 0, "The dragged badge style clears");
+      if (cancel || from === destination) assert.equal(nativeState.puts.length, writes, "Cancelled and unchanged drags do not save");
+      assert.equal(nativeState.document.settings.button_order, originalOrder, "Badge insertion does not reorder cards");
+    }
+    await insertBadge(0, 3);
+    await insertBadge(2, 1);
+    await insertBadge(1, 5);
+    await insertBadge(4, 0);
+    await insertBadge(1, 2);
+    await insertBadge(0, 4, true);
+    await insertBadge(4, 0);
     await waitForNativeState(nativeState, () => parseBadgeRow(nativeState.document.settings.badge_row_0)[0]?.label === "2 open", "Badge drag reorder");
     assert.equal(parseBadgeRow(nativeState.document.settings.badge_row_0)[0].label, "2 open");
     // A subpage badge can create a dedicated page instead of reusing an

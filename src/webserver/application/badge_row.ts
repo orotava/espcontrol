@@ -58,6 +58,7 @@ export function createBadgeRowFeature(deps: {
   let saving = false;
   let badgesHidden = false;
   let draggedIndex = -1;
+  let draggedPage = -1;
   let loadGeneration = 0;
   const pageIndex = () => state.editingSubpage || 0;
   const badges = (page = pageIndex()) => state.badgeRows[String(page)] || [];
@@ -85,6 +86,27 @@ export function createBadgeRowFeature(deps: {
     row = document.createElement("div");
     row.className = "sp-badge-row";
     row.setAttribute("aria-label", "Page badges");
+    row.addEventListener("dragover", event => {
+      if (!canDropBadge()) return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+      showInsertionMarker(insertionAt(event.clientX));
+    });
+    row.addEventListener("dragleave", event => {
+      const bounds = row!.getBoundingClientRect();
+      if (event.clientX < bounds.left || event.clientX >= bounds.right ||
+          event.clientY < bounds.top || event.clientY >= bounds.bottom) hideInsertionMarker();
+    });
+    row.addEventListener("drop", event => {
+      if (!canDropBadge()) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const insertion = insertionAt(event.clientX);
+      const from = draggedIndex;
+      endDrag();
+      reorderBadge(from, from < insertion ? insertion - 1 : insertion);
+    });
     els.previewScreen.appendChild(row);
     const settings = createSettingsModal(document, close, "Close badge settings");
     overlay = settings.overlay;
@@ -114,6 +136,11 @@ export function createBadgeRowFeature(deps: {
     const group = document.createElement("div");
     group.className = "sp-badge-row-items";
     row.appendChild(group);
+    const marker = document.createElement("div");
+    marker.className = "sp-badge-insertion-marker";
+    marker.setAttribute("aria-hidden", "true");
+    marker.hidden = true;
+    group.appendChild(marker);
     const colors = PREVIEW_THEME_COLORS[previewEffectiveTheme(state)];
     const selection = currentSelection();
     items.forEach((config, index) => {
@@ -140,20 +167,6 @@ export function createBadgeRowFeature(deps: {
     });
     const add = button("", addBadge, "sp-btn sp-badge-add", "plus", "Add badge");
     add.disabled = saving || shell.isConfigLocked() || items.length >= MAX_ROW_BADGES;
-    add.addEventListener("dragover", event => {
-      if (draggedIndex < 0 || saving || shell.isConfigLocked()) return;
-      event.preventDefault();
-      event.dataTransfer && (event.dataTransfer.dropEffect = "move");
-      add.classList.add("sp-drop-target");
-    });
-    add.addEventListener("dragleave", () => add.classList.remove("sp-drop-target"));
-    add.addEventListener("drop", event => {
-      if (draggedIndex < 0 || saving || shell.isConfigLocked()) return;
-      event.preventDefault();
-      add.classList.remove("sp-drop-target");
-      reorderBadge(draggedIndex, items.length - 1);
-      draggedIndex = -1;
-    });
     group.appendChild(add);
   }
 
@@ -190,32 +203,51 @@ export function createBadgeRowFeature(deps: {
     item.addEventListener("dragstart", event => {
       if (saving || shell.isConfigLocked()) { event.preventDefault(); return; }
       draggedIndex = index;
+      draggedPage = pageIndex();
       event.dataTransfer && (event.dataTransfer.effectAllowed = "move");
       event.dataTransfer && event.dataTransfer.setData("text/plain", String(index));
       item.classList.add("sp-dragging");
     });
-    item.addEventListener("dragover", event => {
-      if (draggedIndex < 0 || draggedIndex === index || saving || shell.isConfigLocked()) return;
-      event.preventDefault();
-      event.dataTransfer && (event.dataTransfer.dropEffect = "move");
-      item.classList.add("sp-drop-target");
-    });
-    item.addEventListener("dragleave", () => item.classList.remove("sp-drop-target"));
-    item.addEventListener("drop", event => {
-      if (draggedIndex < 0 || saving || shell.isConfigLocked()) return;
-      event.preventDefault();
-      item.classList.remove("sp-drop-target");
+    item.addEventListener("dragend", endDrag);
+  }
+
+  function canDropBadge() {
+    return draggedIndex >= 0 && draggedIndex < badges().length && draggedPage === pageIndex() &&
+      !row?.hidden && !saving && !shell.isConfigLocked();
+  }
+
+  function insertionAt(clientX: number) {
+    const items = Array.from(row!.querySelectorAll<HTMLElement>("[data-badge-index]"));
+    const index = items.findIndex(item => {
       const bounds = item.getBoundingClientRect();
-      const insertion = event.clientX < bounds.left + bounds.width / 2 ? index : index + 1;
-      const destination = draggedIndex < insertion ? insertion - 1 : insertion;
-      reorderBadge(draggedIndex, Math.min(badges().length - 1, destination));
-      draggedIndex = -1;
+      return clientX < bounds.left + bounds.width / 2;
     });
-    item.addEventListener("dragend", () => {
-      draggedIndex = -1;
-      item.classList.remove("sp-dragging");
-      row?.querySelectorAll(".sp-drop-target").forEach(target => target.classList.remove("sp-drop-target"));
-    });
+    return index < 0 ? items.length : index;
+  }
+
+  function showInsertionMarker(insertion: number) {
+    const group = row!.querySelector<HTMLElement>(".sp-badge-row-items")!;
+    const marker = group.querySelector<HTMLElement>(".sp-badge-insertion-marker")!;
+    const items = group.querySelectorAll<HTMLElement>("[data-badge-index]");
+    const before = items[insertion - 1]?.getBoundingClientRect();
+    const after = (items[insertion] || group.querySelector<HTMLElement>(".sp-badge-add"))!.getBoundingClientRect();
+    const gap = parseFloat(document.defaultView!.getComputedStyle(items[0]!).marginLeft);
+    const x = before ? (before.right + after.left) / 2 : after.left - gap / 2;
+    marker.style.left = (x - group.getBoundingClientRect().left) + "px";
+    marker.dataset.insertionIndex = String(insertion);
+    marker.hidden = false;
+  }
+
+  function hideInsertionMarker() {
+    const marker = row?.querySelector<HTMLElement>(".sp-badge-insertion-marker");
+    if (marker) marker.hidden = true;
+  }
+
+  function endDrag() {
+    draggedIndex = -1;
+    draggedPage = -1;
+    hideInsertionMarker();
+    row?.querySelectorAll(".sp-dragging").forEach(item => item.classList.remove("sp-dragging"));
   }
 
   function reorderBadge(from: number, to: number) {
