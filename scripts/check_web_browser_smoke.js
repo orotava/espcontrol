@@ -6486,8 +6486,12 @@ async function assertBadgeJourney(browser, testCase) {
     await firstBadge.click({ button: "right" });
     assert(await page.locator('.sp-badge-row [data-badge-index="0"]').evaluate(badge => badge.classList.contains("sp-selected")), "Right-clicking a badge selects it");
     assert(!(await hideBadgesControl.isVisible()), "The hide-badges control is hidden while a badge is selected");
+    const selectedBadgeBar = page.locator(".sp-selection-bar");
+    assert(await selectedBadgeBar.getByText("1 badge selected", { exact: true }).isVisible(), "The selected-badge bar shows the badge selection count");
+    assert(await selectedBadgeBar.getByRole("button", { name: "Edit", exact: true }).isVisible(), "The selected-badge bar offers Edit");
+    await selectedBadgeBar.getByRole("button", { name: "Badge actions", exact: true }).click();
     const badgeMenu = page.locator(".sp-ctx-menu");
-    assert(await badgeMenu.isVisible(), "Right-clicking a badge opens its context menu");
+    assert(await badgeMenu.isVisible(), "The selected-badge bar ellipsis opens the badge context menu");
     const badgeMenuLabels = await badgeMenu.locator(".sp-ctx-item").allTextContents();
     for (const label of ["Edit Badge", "Duplicate", "Copy", "Copy Code", "Cut", "Delete"]) {
       assert(badgeMenuLabels.includes(label), `Badge context menu includes ${label}`);

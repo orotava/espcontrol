@@ -124,16 +124,7 @@ export function createBadgeRowFeature(deps: {
         event.preventDefault();
         event.stopPropagation();
         selectBadge(index);
-        const actions: BadgeContextMenuActions = {
-          edit: () => edit(index),
-          duplicate: () => duplicateBadge(index),
-          copy: () => { badgeClipboard = cloneBadgeForClipboard(badges()[index]!); },
-          copyCode: () => deps.showCopyCode(cloneBadgeForClipboard(config)),
-          cut: () => cutBadge(index),
-          delete: () => deleteBadge(index),
-          ...(badgeClipboard ? { paste: () => pasteBadge(index + 1) } : {}),
-        };
-        deps.contextMenu.showBadge(event, actions);
+        deps.contextMenu.showBadge(event, badgeContextMenuActions(index));
       });
       group.appendChild(item);
     });
@@ -224,18 +215,38 @@ export function createBadgeRowFeature(deps: {
     return currentSelection() !== null;
   }
 
+  function badgeContextMenuActions(index: number): BadgeContextMenuActions {
+    return {
+      edit: () => edit(index),
+      duplicate: () => duplicateBadge(index),
+      copy: () => { badgeClipboard = cloneBadgeForClipboard(badges()[index]!); },
+      copyCode: () => deps.showCopyCode(cloneBadgeForClipboard(badges()[index]!)),
+      cut: () => cutBadge(index),
+      delete: () => deleteBadge(index),
+      ...(badgeClipboard ? { paste: () => pasteBadge(index + 1) } : {}),
+    };
+  }
+
   function renderSelectedBadgeBar(container: HTMLElement) {
     const selected = currentSelection();
     if (!selected) return false;
-    const badge = badges(selected.page)[selected.index]!;
     const label = document.createElement("span");
     label.className = "sp-selection-label";
-    label.textContent = (badge.label || badge.sensor || "Badge " + (selected.index + 1)) + " selected";
+    label.textContent = "1 badge selected";
     container.appendChild(label);
     const actions = document.createElement("div");
     actions.className = "sp-selection-actions";
     actions.appendChild(button("Edit", () => edit(selected.index), "sp-selection-btn sp-selection-btn-primary", "pencil"));
-    actions.appendChild(button("", deleteSelectedBadge, "sp-selection-btn", "trash-can-outline", "Delete"));
+    const menu = shell.createActionButton("sp-selection-btn", "", "dots-horizontal", "Badge actions") as HTMLButtonElement;
+    menu.type = "button";
+    menu.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!saving && !shell.isConfigLocked()) {
+        deps.contextMenu.showBadge(event, badgeContextMenuActions(selected.index));
+      }
+    });
+    actions.appendChild(menu);
     container.appendChild(actions);
     return true;
   }
