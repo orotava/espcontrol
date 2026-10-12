@@ -82,6 +82,15 @@ inline void badge_update(BadgeCtx *ctx) {
     set_card_disabled_state(ctx->button, !available);
     if (!available) ctx->dragging = false;
   }
+  // Switch badges use the same checked state as toggle cards, so their live
+  // on/off state remains visible even when optional sensor active-coloring is off.
+  if (ctx->action == "toggle") {
+    set_card_checked_state(ctx->button,
+      espcontrol::badge::toggle_checked(available, ctx->target_on));
+  } else if (ctx->active_color && ctx->display_entity.empty() && ctx->action == "slider") {
+    set_card_checked_state(ctx->button,
+      ctx->target_available && (badge_numeric(ctx) ? ctx->level > 0.0 : ctx->target_on));
+  }
   if (ctx->slider) {
     if (available) lv_obj_add_flag(ctx->slider, LV_OBJ_FLAG_CLICKABLE);
     else lv_obj_clear_flag(ctx->slider, LV_OBJ_FLAG_CLICKABLE);
@@ -332,8 +341,6 @@ inline bool badge_driver_bind_data(BtnSlot &slot, const ParsedCfg &, const Conte
         ctx->level_known = ctx->target_available && parse_double_ref(state, ctx->level) && std::isfinite(ctx->level);
         ctx->target_available = ctx->level_known;
       }
-      if (ctx->active_color && ctx->display_entity.empty()) set_card_checked_state(ctx->button,
-        ctx->target_available && (badge_numeric(ctx) ? ctx->level > 0.0 : ctx->target_on));
       badge_update(ctx);
     });
   }

@@ -14,6 +14,10 @@ inline int width_for_text(int line_height, int text_width, bool slider) {
   return static_cast<int>(std::min<long long>(INT_MAX, std::max(minimum, natural)));
 }
 
+inline bool toggle_checked(bool available, bool is_on) {
+  return available && is_on;
+}
+
 inline std::string action(const std::string &value) {
   return value == "subpage" || value == "modal" || value == "toggle" || value == "button" ||
          value == "slider" ? value : "display";
