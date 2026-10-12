@@ -6405,6 +6405,9 @@ async function assertBadgeJourney(browser, testCase) {
     await page.waitForFunction(() => window.__eventSources?.length > 0);
     await seedNativeDocument(page, nativeState);
     await page.waitForFunction(() => document.querySelectorAll(".sp-badge-row .sp-badge-card").length === 5);
+    const badgeBarControl = page.getByRole("button", { name: "Manage badge bar", exact: true });
+    assert(await page.locator(".sp-selection-bar").isVisible(), "The edit bar stays visible with no selected card");
+    assert(await badgeBarControl.isVisible(), "The badge-bar control appears when no card is selected");
     assert.strictEqual(await page.locator(".sp-main .sp-badge-card").count(), 0, "Badges never occupy card slots");
     const gridCount = await page.locator(".sp-main [data-pos]").count();
     assert.strictEqual(await page.locator(".sp-badge-slider .sp-badge-fill").count(), 1);
@@ -6468,7 +6471,7 @@ async function assertBadgeJourney(browser, testCase) {
     assert.equal(parseBadgeRow(nativeState.document.settings.badge_row_0)[3].label, "2 open");
     // A subpage gets its own row without changing its Back card or card list.
     await page.locator('.sp-main [data-slot="3"] .sp-subpage-badge').click();
-    await page.getByRole("button", { name: "Badges", exact: true }).click();
+    await badgeBarControl.click();
     await dialog.getByRole("button", { name: "Add badge", exact: true }).click();
     assert.equal(await dialog.locator('[data-badge-type="label"]').count(), 0);
     assert.equal(await dialog.locator('[data-badge-type]').count(), 6);
@@ -6483,8 +6486,14 @@ async function assertBadgeJourney(browser, testCase) {
     // Exercise actual entity entry from a new badge, with a grid card already
     // selected. Typing or choosing suggestions must not reset the badge editor.
     await page.locator('.sp-main [data-slot="1"]').click();
+    assert(await page.locator(".sp-selection-bar").isVisible(), "The edit bar stays visible with a selected card");
+    assert(!(await badgeBarControl.isVisible()), "The badge-bar control is removed when a card is selected");
     async function addTypedBadge(type) {
-      await page.getByRole("button", { name: "Badges", exact: true }).click();
+      if (!(await badgeBarControl.isVisible())) {
+        await page.locator(".sp-hint").click();
+        await badgeBarControl.waitFor({ state: "visible" });
+      }
+      await badgeBarControl.click();
       await dialog.getByRole("button", { name: "Add badge", exact: true }).click();
       await dialog.locator(`[data-badge-type="${type}"]`).click();
       assert.equal(await page.locator("#sp-badge-inp-badge-type").inputValue(), type);

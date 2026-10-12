@@ -592,6 +592,7 @@ function composeApplicationContext(): ApplicationContext {
     fields,
     artworkPostApi,
   });
+  let badgeRows: BadgeRowFeature;
   selection = createButtonSettingsSelectionFeature(
     runtime,
     clockBarState,
@@ -608,9 +609,9 @@ function composeApplicationContext(): ApplicationContext {
       showSelectionMenu: (event) => contextMenu.showSelection(event),
       contextMenuContains: (target) => contextMenu.contains(target),
       openVoiceServicesSettings: () => settingsHelpers.openVoiceServicesSettings(),
+      renderBadgeBarControl: (container) => badgeRows?.renderSelectionControl(container),
     },
   );
-  let badgeRows: BadgeRowFeature;
   preview = createPreviewRenderFeature({
     renderBadgeRow: () => badgeRows?.render(),
     updateClockBarItemUi: () => statusPreview.updateClockBarItemUi(),

@@ -77,7 +77,6 @@ export function createWebStyles(dragAnimation: boolean): string {
         ".sp-main{position:absolute;top:var(--grid-top);left:var(--grid-left);right:var(--grid-right);bottom:var(--grid-bottom);" +
         "display:grid;grid-template-columns:var(--grid-cols);grid-template-rows:var(--grid-rows);gap:var(--grid-gap);overflow:hidden}" +
         ".sp-main.sp-grid-loading{visibility:hidden;opacity:0;pointer-events:none;transition:opacity .2s,visibility .2s}" +
-        ".sp-badge-toolbar{display:flex;align-items:center;gap:12px;margin:8px 0;color:var(--text2);font-size:13px}.sp-badge-toolbar[hidden]{display:none}" +
         ".sp-badge-row{position:absolute;top:calc(var(--grid-top) + var(--btn-label)*.33);left:var(--grid-left);right:var(--grid-right);height:calc(var(--btn-label)*2);display:flex;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}" +
         ".sp-badge-row-items{display:flex;flex:none;width:max-content;min-width:100%;justify-content:center;box-sizing:border-box;padding-right:calc(var(--btn-label)*.5)}" +
         ".sp-badge-row[hidden]{display:none}.sp-badge-row::-webkit-scrollbar{display:none}" +
@@ -200,7 +199,7 @@ export function createWebStyles(dragAnimation: boolean): string {
         (dragAnimation ? ".sp-btn.sp-dragging{opacity:.4;transform:scale(.95)}" +
             ".sp-empty-cell.sp-drop-placeholder{border-color:rgba(92,156,245,.5)}" : "") +
         ".sp-hint{text-align:center;font-size:.7rem;color:var(--text3);padding:8px 0 12px;user-select:none}" +
-        ".sp-selection-bar{display:none;align-items:center;justify-content:space-between;gap:12px;" +
+        ".sp-selection-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;" +
         "width:100%;max-width:1080px;margin:0 auto;box-sizing:border-box;overflow:hidden;" +
         "padding:14px var(--gap);background:var(--surface);" +
         "color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;user-select:none}" +

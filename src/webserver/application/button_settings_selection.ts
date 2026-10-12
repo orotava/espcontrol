@@ -29,6 +29,7 @@ export interface ButtonSettingsSelectionDependencies {
     readonly showSelectionMenu: (event?: any) => void;
     readonly contextMenuContains: (target?: any) => boolean;
     readonly openVoiceServicesSettings: () => void;
+    readonly renderBadgeBarControl?: (container: HTMLElement) => void;
 }
 
 export function createButtonSettingsSelectionFeature(runtime: UiRuntimeState, clockBar: ClockBarFeature, entityState: Pick<EntityStateFeature, "entityInput">, shell: Pick<ControlsShellFeature, "isConfigLocked" | "createActionButton">, statusPreview: Pick<AppStatusPreviewFeature, "clockBarItemActive" | "clockBarItemLabel" | "clockBarItems" | "isClockBarTemperatureItem" | "updateClockBarItemUi">, grid: Pick<GridFeature, "ctx">, renderQueue: ButtonSettingsRenderQueueFeature, dependencies: ButtonSettingsSelectionDependencies): ButtonSettingsSelectionFeature {
@@ -112,14 +113,15 @@ export function createButtonSettingsSelectionFeature(runtime: UiRuntimeState, cl
         els.selectionBar.innerHTML = "";
         if (!isConfigLocked() && renderClockBarSelectionBar())
             return;
-        if (isConfigLocked() || !c.selected.length) {
-            els.selectionBar.className = "sp-selection-bar";
-            return;
-        }
         els.selectionBar.className = "sp-selection-bar sp-visible";
+        if (isConfigLocked())
+            return;
         var label: any = document.createElement("span");
         label.className = "sp-selection-label";
-        if (c.selected.length === 1 && c.selected[0] === -2) {
+        if (!c.selected.length) {
+            label.textContent = "No card selected";
+        }
+        else if (c.selected.length === 1 && c.selected[0] === -2) {
             label.textContent = "Back button selected";
         }
         else {
@@ -128,6 +130,11 @@ export function createButtonSettingsSelectionFeature(runtime: UiRuntimeState, cl
         els.selectionBar.appendChild(label);
         var actions: any = document.createElement("div");
         actions.className = "sp-selection-actions";
+        if (!c.selected.length) {
+            dependencies.renderBadgeBarControl?.(actions);
+            els.selectionBar.appendChild(actions);
+            return;
+        }
         if (c.selected.length === 1) {
             var editBtn: any = createActionButton("sp-selection-btn sp-selection-btn-primary", "Edit", "pencil");
             editBtn.addEventListener("click", function (this: any, e?: any) {
@@ -172,7 +179,7 @@ export function createButtonSettingsSelectionFeature(runtime: UiRuntimeState, cl
             (els.topbar && els.topbar.contains(target)) ||
             (els.selectionBar && els.selectionBar.contains(target)) ||
             (els.settingsOverlay && els.settingsOverlay.contains(target)) ||
-            (target.closest && target.closest(".sp-badge-settings-overlay, .sp-badge-row, .sp-badge-toolbar")) ||
+            (target.closest && target.closest(".sp-badge-settings-overlay, .sp-badge-row")) ||
             dependencies.contextMenuContains(target) ||
             (target.closest && target.closest(".sp-ctx-menu")));
     }

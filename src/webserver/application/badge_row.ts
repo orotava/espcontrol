@@ -16,7 +16,11 @@ import type { EntityStateFeature } from "./entity_state";
 import type { ControlsShellFeature } from "./controls_shell";
 import type { UiRuntimeState } from "./state";
 
-export interface BadgeRowFeature { render(): void; load(): Promise<void>; }
+export interface BadgeRowFeature {
+  render(): void;
+  renderSelectionControl(container: HTMLElement): void;
+  load(): Promise<void>;
+}
 
 export function createBadgeRowFeature(deps: {
   document: Document; runtime: UiRuntimeState; cards: CardRegistry;
@@ -28,7 +32,6 @@ export function createBadgeRowFeature(deps: {
 }): BadgeRowFeature {
   const { document, fields, runtime, shell } = deps;
   const els = runtime.els;
-  let toolbar: HTMLElement | null = null;
   let row: HTMLElement | null = null;
   let overlay: HTMLElement | null = null;
   let modal: HTMLElement | null = null;
@@ -53,13 +56,6 @@ export function createBadgeRowFeature(deps: {
     row.className = "sp-badge-row";
     row.setAttribute("aria-label", "Page badges");
     els.previewScreen.appendChild(row);
-    toolbar = document.createElement("div");
-    toolbar.className = "sp-badge-toolbar";
-    toolbar.appendChild(button("Badges", () => openList()));
-    const hint = document.createElement("span");
-    hint.textContent = "A short row above this page’s cards";
-    toolbar.appendChild(hint);
-    els.screenPage.insertBefore(toolbar, els.selectionBar.nextSibling);
     const settings = createSettingsModal(document, close, "Close badge settings");
     overlay = settings.overlay;
     modal = settings.modal;
@@ -75,9 +71,7 @@ export function createBadgeRowFeature(deps: {
 
   function render() {
     ensureUi();
-    if (!row || !toolbar) return;
-    toolbar.hidden = !state.badgeRowsSupported;
-    (toolbar.querySelector("button") as HTMLButtonElement).disabled = !state.badgeRowsReady || shell.isConfigLocked();
+    if (!row) return;
     row.replaceChildren();
     const items = badges().map(cloneCardConfig);
     if (draft && draft.page === pageIndex()) items[draft.index] = draft.button;
@@ -97,6 +91,14 @@ export function createBadgeRowFeature(deps: {
       item.disabled = shell.isConfigLocked();
       group.appendChild(item);
     });
+  }
+
+  function renderSelectionControl(container: HTMLElement) {
+    ensureUi();
+    if (!state.badgeRowsSupported) return;
+    const control = button("Badges", () => openList(), "sp-selection-btn", "view-grid-plus", "Manage badge bar");
+    control.disabled = !state.badgeRowsReady || shell.isConfigLocked();
+    container.appendChild(control);
   }
 
   function header(title: string) {
@@ -248,5 +250,5 @@ export function createBadgeRowFeature(deps: {
       deps.renderPreview();
     } catch { shell.showBanner("Could not load badge rows. Reload to try again.", "error"); }
   }
-  return { render, load };
+  return { render, renderSelectionControl, load };
 }
