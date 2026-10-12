@@ -6415,6 +6415,10 @@ async function assertBadgeJourney(browser, testCase) {
     assert(await page.locator(".sp-badge-row-items > :last-child").evaluate(element => element.classList.contains("sp-badge-add")), "The add badge affordance stays at the end of the row");
     const addBadgeDefaultBorder = await addBadgeButton.evaluate(button => getComputedStyle(button).borderTopColor);
     await addBadgeButton.hover();
+    await page.waitForFunction(defaultBorder => {
+      const button = document.querySelector(".sp-badge-add");
+      return getComputedStyle(button).borderTopColor !== defaultBorder;
+    }, addBadgeDefaultBorder);
     const addBadgeHover = await addBadgeButton.evaluate(button => {
       const style = getComputedStyle(button);
       return { borderStyle: style.borderTopStyle, borderColor: style.borderTopColor,
@@ -6440,7 +6444,7 @@ async function assertBadgeJourney(browser, testCase) {
       const icon = badge.querySelector(".mdi");
       const rowBottom = badge.closest(".sp-badge-row").getBoundingClientRect().bottom;
       const gridTop = document.querySelector(".sp-main").getBoundingClientRect().top;
-      const labelSize = parseFloat(getComputedStyle(text).fontSize);
+      const labelSize = parseFloat(getComputedStyle(document.querySelector(".sp-main .sp-btn-label")).fontSize);
       return { width: bounds.width, height: bounds.height, textHeight: text.getBoundingClientRect().height,
         aligned: Math.abs(text.getBoundingClientRect().top - icon.getBoundingClientRect().top) < bounds.height / 2,
         overflowing: text.scrollWidth > text.clientWidth,
@@ -6465,11 +6469,11 @@ async function assertBadgeJourney(browser, testCase) {
       const icon = getComputedStyle(pill.querySelector(".mdi"));
       return { matching: badge.fontFamily === label.fontFamily && badge.fontWeight === label.fontWeight &&
           Math.abs(parseFloat(badge.fontSize) / parseFloat(label.fontSize) - 0.9) < 0.01,
-        height: pill.getBoundingClientRect().height, textSize: parseFloat(badge.fontSize), iconSize: parseFloat(icon.fontSize),
+        height: pill.getBoundingClientRect().height, labelSize: parseFloat(label.fontSize), iconSize: parseFloat(icon.fontSize),
         paddingLeft: parseFloat(getComputedStyle(pill).paddingLeft), paddingRight: parseFloat(getComputedStyle(pill).paddingRight) };
     });
     assert(typography.matching, "Badge text uses the same font and weight as card labels at a slightly smaller size");
-    assert(typography.height <= typography.textSize * 2.4 + 1 && typography.iconSize <= typography.textSize * 1.2 + 1, "Badge and icon sizes match the device line-height proportions");
+    assert(typography.height <= typography.labelSize * 2.4 + 1 && typography.iconSize <= typography.labelSize * 1.2 + 1, "Badge and icon sizes match the device line-height proportions");
     assert(typography.paddingRight > typography.paddingLeft, "Badges have extra padding on their right side");
     const rowGeometry = await page.locator(".sp-badge-row").evaluate(row => {
       const bounds = row.getBoundingClientRect();
@@ -6492,10 +6496,14 @@ async function assertBadgeJourney(browser, testCase) {
     const selectedBadgeBar = page.locator(".sp-selection-bar");
     assert(await selectedBadgeBar.getByText("1 badge selected", { exact: true }).isVisible(), "The selected-badge bar shows the badge selection count");
     assert(await selectedBadgeBar.getByRole("button", { name: "Edit", exact: true }).isVisible(), "The selected-badge bar offers Edit");
+    const rightClickMenu = page.locator(".sp-ctx-menu");
+    assert(await rightClickMenu.isVisible(), "Right-clicking a badge opens its context menu");
+    const rightClickMenuLabels = await rightClickMenu.locator(".sp-ctx-item").allTextContents();
     await selectedBadgeBar.getByRole("button", { name: "Badge actions", exact: true }).click();
     const badgeMenu = page.locator(".sp-ctx-menu");
     assert(await badgeMenu.isVisible(), "The selected-badge bar ellipsis opens the badge context menu");
     const badgeMenuLabels = await badgeMenu.locator(".sp-ctx-item").allTextContents();
+    assert.deepStrictEqual(badgeMenuLabels, rightClickMenuLabels, "Right-click and the edit bar offer the same badge actions");
     for (const label of ["Edit Badge", "Duplicate", "Copy", "Copy Code", "Cut", "Delete"]) {
       assert(badgeMenuLabels.includes(label), `Badge context menu includes ${label}`);
     }
@@ -6675,7 +6683,8 @@ async function assertBadgeJourney(browser, testCase) {
     await page.locator('.sp-main [data-slot="3"] .sp-subpage-badge').click();
     for (let remaining = 5; remaining > 0; remaining--) {
       await page.locator('.sp-badge-row [data-badge-index="0"]').click();
-      await page.locator(".sp-selection-bar").getByRole("button", { name: "Delete", exact: true }).click();
+      await page.locator(".sp-selection-bar").getByRole("button", { name: "Badge actions", exact: true }).click();
+      await page.locator(".sp-ctx-menu").getByText("Delete", { exact: true }).click();
       await waitForNativeState(nativeState, () => parseBadgeRow(nativeState.document.settings.badge_row_3).length === remaining - 1, "Badge deletion");
     }
     assert(!nativeState.document.settings.badge_row_3, "Deleting the last badge removes the row record");
