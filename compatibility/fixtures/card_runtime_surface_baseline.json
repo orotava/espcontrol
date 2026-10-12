@@ -2636,8 +2636,6 @@
       },
       "lifecycle": {
         "subscriptions": [
-          "state",
-          "attributes",
           "action_response"
         ],
         "actions": [
@@ -2669,8 +2667,6 @@
       },
       "lifecycle": {
         "subscriptions": [
-          "state",
-          "attributes",
           "action_response"
         ],
         "actions": [
@@ -2702,8 +2698,6 @@
       },
       "lifecycle": {
         "subscriptions": [
-          "state",
-          "attributes",
           "action_response"
         ],
         "actions": [
@@ -2895,8 +2889,6 @@
       },
       "lifecycle": {
         "subscriptions": [
-          "state",
-          "attributes",
           "action_response"
         ],
         "actions": [
