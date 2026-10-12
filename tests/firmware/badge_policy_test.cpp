@@ -4,6 +4,14 @@
 
 int main() {
   using namespace espcontrol::badge;
+  assert(slider_value_text(21.4) == "21");
+  assert(slider_value_text(21.5) == "22");
+  assert(slider_value_text(-21.5) == "-22");
+  assert(slider_value_text(-0.4) == "0");
+  assert(slider_value_text(35) == "35");
+  assert(slider_value_text(std::numeric_limits<double>::infinity()) == "--");
+  assert(slider_value_text(std::numeric_limits<double>::max()).size() == 309);
+  assert(slider_value_text(-std::numeric_limits<double>::max()).size() == 310);
   assert(content_left_padding(24) > content_right_padding(24));
   assert(width_for_text(24, 20, false) == 108);
   assert(width_for_text(24, 20, true) == 88);

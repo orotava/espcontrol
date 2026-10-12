@@ -3,9 +3,21 @@
 #include "number_slider_policy.h"
 #include <algorithm>
 #include <climits>
+#include <cmath>
+#include <cstdio>
+#include <limits>
 #include <string>
 
 namespace espcontrol::badge {
+
+inline std::string slider_value_text(double value) {
+  if (!std::isfinite(value)) return "--";
+  value = std::round(value);
+  if (value == 0.0) value = 0.0;  // Avoid displaying negative zero.
+  char buffer[std::numeric_limits<double>::max_exponent10 + 4];
+  std::snprintf(buffer, sizeof(buffer), "%.0f", value);
+  return buffer;
+}
 
 inline int content_left_padding(int line_height) {
   return line_height * 9 / 10;

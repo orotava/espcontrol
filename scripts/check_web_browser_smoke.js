@@ -6731,9 +6731,36 @@ async function assertBadgeJourney(browser, testCase) {
     assert(parseBadgeRow(nativeState.document.settings.badge_row_3)[3].options.includes("badge_action=button"));
     await addTypedBadge("slider");
     await page.locator("#sp-badge-inp-entity").pressSequentially("number.kitchen_target");
+    await dialog.getByRole("button", { name: "Badge Settings", exact: true }).click();
+    for (const field of ["label", "badge-display", "sensor", "unit", "badge-attribute", "badge-decimals"]) {
+      assert.equal(await dialog.locator("#sp-badge-inp-" + field).count(), 0, "Slider settings omit " + field);
+    }
+    assert(await dialog.locator("#sp-badge-inp-badge-active + .sp-toggle-track").isVisible(), "Slider active colouring remains available");
     await dialog.getByRole("button", { name: "Save", exact: true }).click();
     await dialog.waitFor({ state: "hidden" });
-    assert.equal(parseBadgeRow(nativeState.document.settings.badge_row_3)[4].entity, "number.kitchen_target");
+    const savedSlider = parseBadgeRow(nativeState.document.settings.badge_row_3)[4];
+    assert.equal(savedSlider.entity, "number.kitchen_target");
+    assert.equal(savedSlider.precision, "value");
+    assert.equal(savedSlider.sensor, "");
+    assert.equal(savedSlider.unit, "");
+    assert.equal(await rowBadge(4).locator(".sp-badge-text").innerText(), "35", "Numeric slider previews show a whole number");
+    await rowBadge(4).click({ button: "right" });
+    await page.locator(".sp-ctx-menu").getByText("Duplicate", { exact: true }).click();
+    await waitForNativeState(nativeState, () => parseBadgeRow(nativeState.document.settings.badge_row_3).length === 6, "Duplicate slider for bulk settings");
+    await rowBadge(4).click({ modifiers: ["Control"] });
+    await page.locator(".sp-selection-bar").getByRole("button", { name: "Edit", exact: true }).click();
+    await dialog.getByRole("button", { name: "Badge Settings", exact: true }).click();
+    for (const field of ["label", "display", "sensor", "unit", "attribute", "decimals"]) {
+      assert.equal(await dialog.locator("#sp-badge-bulk-" + field).count(), 0, "Bulk slider settings omit " + field);
+    }
+    assert(await dialog.locator("#sp-badge-bulk-entity").isVisible(), "Bulk slider editing keeps the control entity");
+    assert(await dialog.locator("#sp-badge-bulk-active + .sp-toggle-track").isVisible(), "Bulk slider editing keeps active colouring");
+    await dialog.getByRole("button", { name: "Save", exact: true }).click();
+    await dialog.waitFor({ state: "hidden" });
+    await rowBadge(5).click();
+    await rowBadge(5).click({ button: "right" });
+    await page.locator(".sp-ctx-menu").getByText("Delete", { exact: true }).click();
+    await waitForNativeState(nativeState, () => parseBadgeRow(nativeState.document.settings.badge_row_3).length === 5, "Remove slider bulk settings duplicate");
     await rowBadge(2).click({ button: "right" });
     await page.locator(".sp-ctx-menu").getByText("Duplicate", { exact: true }).click();
     await waitForNativeState(nativeState, () => parseBadgeRow(nativeState.document.settings.badge_row_3).length === 6, "Duplicate switch for same-type bulk editing");

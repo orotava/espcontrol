@@ -72,6 +72,12 @@ inline bool badge_slider_ready(const BadgeCtx *ctx) {
     (!ctx->target_on && !espcontrol::number_slider::has_domain(ctx->target, "media_player")));
 }
 
+inline std::string badge_slider_text(const BadgeCtx *ctx, int position) {
+  if (badge_numeric(ctx)) return espcontrol::badge::slider_value_text(
+    espcontrol::number_slider::value_for_position(ctx->metadata, position)) + ctx->auto_unit;
+  return std::to_string(position) + "%";
+}
+
 inline void badge_update(BadgeCtx *ctx) {
   if (!ctx) return;
   const bool control = ctx->action == "toggle" || ctx->action == "button" || ctx->action == "slider";
@@ -113,10 +119,7 @@ inline void badge_update(BadgeCtx *ctx) {
     text = "--";
     if (ctx->display_entity.empty() && ctx->slider && badge_slider_ready(ctx)) {
       const int position = lv_slider_get_value(ctx->slider);
-      if (badge_numeric(ctx)) text = espcontrol::number_slider::format_value(
-        espcontrol::number_slider::value_for_position(ctx->metadata, position), ctx->metadata);
-      else text = std::to_string(position);
-      text += ctx->unit.empty() ? (badge_numeric(ctx) ? ctx->auto_unit : "%") : ctx->unit;
+      text = badge_slider_text(ctx, position);
     } else if (ctx->display_available && !ctx->display_value.empty()) {
       double numeric = 0.0;
       if (parse_double_ref(esphome::StringRef(ctx->display_value), numeric) && std::isfinite(numeric)) {
@@ -200,10 +203,10 @@ inline bool badge_driver_setup_visual(BtnSlot &slot, const ParsedCfg &config,
   ctx->slider_action = ctx->action == "slider";
   ctx->target = config.entity;
   ctx->label = config.label;
-  ctx->display_entity = config.sensor;
-  ctx->display_attribute = cfg_option_value(config.options, "badge_attribute");
-  ctx->unit = config.unit;
-  ctx->show_value = config.precision == "value";
+  ctx->display_entity = ctx->slider_action ? "" : config.sensor;
+  ctx->display_attribute = ctx->slider_action ? "" : cfg_option_value(config.options, "badge_attribute");
+  ctx->unit = ctx->slider_action ? "" : config.unit;
+  ctx->show_value = ctx->slider_action || config.precision == "value";
   ctx->page = atoi(cfg_option_value(config.options, "badge_page").c_str());
   ctx->active_color = cfg_option_enabled(config.options, "active_color");
   const std::string decimals = cfg_option_value(config.options, "badge_decimals");
@@ -229,10 +232,7 @@ inline bool badge_driver_setup_visual(BtnSlot &slot, const ParsedCfg &config,
       if (code == LV_EVENT_PRESSED) state->dragging = badge_slider_ready(state);
       if (code == LV_EVENT_VALUE_CHANGED && state->dragging && state->show_value && state->display_entity.empty()) {
         const int position = lv_slider_get_value(state->slider);
-        std::string value = badge_numeric(state)
-          ? espcontrol::number_slider::format_value(espcontrol::number_slider::value_for_position(state->metadata, position), state->metadata)
-          : std::to_string(position);
-        value += state->unit.empty() ? (badge_numeric(state) ? state->auto_unit : "%") : state->unit;
+        const std::string value = badge_slider_text(state, position);
         lv_label_set_display_text(state->value_label, value.c_str());
       }
       if (code == LV_EVENT_RELEASED) {

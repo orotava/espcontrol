@@ -31,7 +31,7 @@ test("badge subtypes select the correct behaviour without a Label type", () => {
     assert.equal(badgeSubtype(button), type.key);
     const restored = parseBadgeRow(serializeBadgeRow([button]))[0];
     assert.equal(badgeSubtype(restored), type.key);
-    assert.equal(restored.sensor, "sensor.kitchen");
+    assert.equal(restored.sensor, type.key === "slider" ? "" : "sensor.kitchen");
   }
   const legacy = badge("badge_action=toggle");
   assert.equal(badgeSubtype(legacy), "switch");
@@ -59,12 +59,26 @@ test("badge keeps panel-wide page destinations, drops invalid ones, and falls ba
 });
 
 test("changing away from navigation removes the old destination while preserving value formatting", () => {
-  const button = badge("badge_action=slider,badge_page=6,badge_attribute=current_temperature,badge_decimals=2,active_color");
+  const button = badge("badge_action=modal,badge_page=6,badge_attribute=current_temperature,badge_decimals=2,active_color");
   normalizeBadgeConfig(button);
   assert.equal(configOptionValue(button.options, "badge_page"), "");
   assert.equal(configOptionValue(button.options, "badge_attribute"), "current_temperature");
   assert.equal(configOptionValue(button.options, "badge_decimals"), "2");
-  assert.equal(badgeAction(button), "slider");
+  assert.equal(badgeAction(button), "modal");
+});
+
+test("existing slider badges always show their own value and discard display overrides", () => {
+  const button = badge("badge_action=slider,badge_page=6,badge_attribute=current_temperature,badge_decimals=2,active_color,card_off_color=112233");
+  button.entity = "number.kitchen_target";
+  button.precision = "label";
+  normalizeBadgeConfig(button);
+  assert.equal(button.precision, "value");
+  assert.equal(button.sensor, "");
+  assert.equal(button.unit, "");
+  assert.equal(button.entity, "number.kitchen_target");
+  assert.equal(button.icon, "Home");
+  assert.equal(button.options, "badge_action=slider,active_color,card_off_color=112233");
+  assert.deepEqual(parseBadgeRow(serializeBadgeRow([button]))[0], button);
 });
 
 test("badge rows round-trip Unicode and delimiters independently of card slots", () => {

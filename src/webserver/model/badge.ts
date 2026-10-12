@@ -41,7 +41,7 @@ export function normalizeBadgeConfig(button: CardConfig): void {
     const page = configOptionValue(source, "badge_page");
     if (/^[1-9]\d?$/.test(page) && Number(page) <= 32) options = setConfigOptionValue(options, "badge_page", page);
   }
-  for (const key of ["badge_attribute", "badge_decimals"]) {
+  for (const key of action === "slider" ? [] : ["badge_attribute", "badge_decimals"]) {
     const value = configOptionValue(source, key).trim();
     if (key === "badge_attribute" ? !!value : value === "0" || value === "2") {
       options = setConfigOptionValue(options, key, value);
@@ -50,5 +50,10 @@ export function normalizeBadgeConfig(button: CardConfig): void {
   if (action !== "button" && configOptionEnabled(source, "active_color")) options += (options ? "," : "") + "active_color";
   button.options = preserveCardColorOptions(source, options);
   button.precision = button.precision === "value" ? "value" : "label";
+  if (action === "slider") {
+    button.precision = "value";
+    button.sensor = "";
+    button.unit = "";
+  }
   button.icon_on = "Auto";
 }

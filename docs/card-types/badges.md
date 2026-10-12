@@ -20,10 +20,10 @@ The row stays one badge high; swipe horizontally if the badges do not all fit.
 2. Choose a **Badge Type** from the table below.
 3. Enter its **Entity** or create its own unique **Subpage**. Open **Badge
    Settings** for the icon and optional display settings, as with card setup.
-4. For a Sensor, its Entity supplies the reading. For other types showing a
-   live value, choose a **Display Entity**. Optionally select an attribute,
-   unit and decimal places. For a Slider, leave Display Entity blank to show
-   the slider's own value.
+4. Sensors show their Entity's reading. Sliders always show their own value
+   as a whole number, using the entity's unit automatically or a percentage
+   for brightness, fan speed and volume. Other types showing a live value
+   use a **Display Entity**, with optional attribute, unit and decimal places.
 5. Turn on **Lit When Active** if you want the badge to use the active colour.
 
 Click a badge to select it, then choose **Edit** in the edit bar. Right-click
@@ -54,12 +54,14 @@ contains rows.
 | Button | Presses a Home Assistant button or input button. |
 | Slider | Drag horizontally to adjust light brightness, fan speed, media volume, a number, or an input number. Sends the new value when you release. |
 
-There is no separate Label badge type. Subpage, Switch, Button, Slider and Modal
-badges can show a label; Sensor badges show live data. Existing fixed-text badges
-remain readable, but editing one requires choosing an entity or another type.
+There is no separate Label badge type. Subpage, Switch, Button and Modal
+badges can show a label; Sensor and Slider badges show live data. Existing
+fixed-text badges remain readable, but editing one requires choosing an entity
+or another type.
 
-The Display Entity can differ from the action's Entity. For example, a badge
-can show a room temperature while opening that room's thermostat modal.
+For badges other than sliders, the Display Entity can differ from the action's
+Entity. For example, a badge can show a room temperature while opening that
+room's thermostat modal.
 Numeric helpers use their Home Assistant minimum, maximum and step. Media
 sliders require support for setting volume directly.
 Slider badges fit their icon and displayed text, including padding, and resize

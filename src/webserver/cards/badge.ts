@@ -70,7 +70,7 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
         const input = text("Entity", "entity", action === "button" ? "e.g. button.restart" : "e.g. light.kitchen", domains, true);
         if (domains.length) helpers.requireEntityDomain(input, domains, "Choose a supported entity for this interaction.");
       }
-      if (subtype !== "sensor" && button.precision !== "value") text("Label", "label", "e.g. Kitchen");
+      if (subtype !== "sensor" && subtype !== "slider" && button.precision !== "value") text("Label", "label", "e.g. Kitchen");
       if (action === "subpage") {
         if (helpers.badgeSubpageSettings) helpers.badgeSubpageSettings(panel, button);
         else {
@@ -80,17 +80,17 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
         }
       }
       helpers.renderCardIconPicker(panel, button, helpers, { field: "icon", fallback: "Auto", label: "Icon" });
-      if (subtype !== "sensor" && subtype !== "button") {
+      if (subtype !== "sensor" && subtype !== "button" && subtype !== "slider") {
         select("Display", "badge-display", button.precision || "label", [["label", "Label"], ["value", "Live value"]], value => {
           button.precision = value;
           helpers.saveField("precision", value);
           rerender();
         });
       }
-      if (subtype !== "sensor" && (button.precision === "value" || configOptionEnabled(button.options, "active_color"))) {
-        text("Display Entity", "sensor", action === "slider" ? "Optional: defaults to the slider value" : "e.g. sensor.kitchen_temperature", [], button.precision === "value" && action !== "slider");
+      if (subtype !== "sensor" && subtype !== "slider" && (button.precision === "value" || configOptionEnabled(button.options, "active_color"))) {
+        text("Display Entity", "sensor", "e.g. sensor.kitchen_temperature", [], button.precision === "value");
       }
-      if (subtype === "sensor" || button.precision === "value") {
+      if (subtype !== "slider" && (subtype === "sensor" || button.precision === "value")) {
         text("Unit (optional)", "unit", "Auto, e.g. °C");
         const field = document.createElement("div");
         field.className = "sp-field";
@@ -109,10 +109,10 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
     },
     renderPreview(button, helpers) {
       const action = badgeAction(button);
-      const value = button.precision === "value";
+      const value = action === "slider" || button.precision === "value";
       const decimals = configOptionValue(button.options, "badge_decimals") || "1";
       const reading = (21.4).toFixed(Number(decimals));
-      const sample = action === "slider" && !button.sensor ? "35%" : reading + (button.unit || "°C");
+      const sample = action === "slider" ? (/^(number|input_number)\./.test(button.entity) ? "35" : "35%") : reading + (button.unit || "°C");
       const label = value ? sample : button.label || "Badge";
       const icon = iconSlug(button.icon && button.icon !== "Auto" ? button.icon : action === "slider" ? "Volume High" : "Home");
       return {
