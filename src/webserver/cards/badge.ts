@@ -1,7 +1,7 @@
 import type { CardRegistry, CardUiServices } from "../application/card_registry";
 import { cardContractDefaultConfig } from "../generated/card_contract";
 import { configOptionEnabled, configOptionValue, setConfigOptionValue } from "../model/config_primitives";
-import { BADGE_SUBTYPES, badgeAction, badgeSubtype, normalizeBadgeConfig, setBadgeSubtype, type BadgeSubtype } from "../model/badge";
+import { badgeAction, badgeSubtype, normalizeBadgeConfig } from "../model/badge";
 import { iconSlug } from "../application/ui_primitives";
 
 export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiServices): void {
@@ -59,12 +59,6 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
         if (required) helpers.requireField(input, "Choose an entity before saving.");
         return input;
       }
-      const type = select("Badge Type", "badge-type", subtype, BADGE_SUBTYPES.map(type => [type.key, type.label]), value => {
-        setBadgeSubtype(button, value as BadgeSubtype);
-        helpers.saveField("options", button.options);
-        rerender();
-      });
-      helpers.markCardPrimaryField(type.parentElement, "type");
       if (action !== "subpage" && subtype === "sensor") {
         const input = text("Entity", "sensor", "e.g. sensor.kitchen_temperature", [], true);
         input.addEventListener("input", () => { button.precision = "value"; helpers.saveField("precision", "value"); });
