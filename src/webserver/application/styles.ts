@@ -88,7 +88,7 @@ export function createWebStyles(dragAnimation: boolean): string {
         ".sp-badge-row .sp-badge-add:hover:not(:disabled){border-color:var(--accent-hover);background:var(--accent-soft)!important}" +
         ".sp-badge-row .sp-badge-add .mdi{font-size:calc(var(--btn-label)*1.2)}.sp-badge-row .sp-badge-add:disabled{opacity:.45;cursor:not-allowed}" +
         ".sp-badge-row .sp-badge-slider{min-width:calc(var(--btn-label)*8.4)}" +
-        ".sp-has-badge-row .sp-main{top:calc(var(--grid-top) + var(--btn-label)*3.2)}" +
+        ".sp-has-badge-row .sp-main{top:calc(var(--grid-top) + var(--btn-label)*3.6)}" +
         ".sp-badge-list{display:flex;flex-direction:column;gap:10px}" +
         ".sp-badge-management{display:flex;gap:8px}" +
         ".sp-btn{border-radius:var(--btn-r);padding:var(--btn-pad);" +
