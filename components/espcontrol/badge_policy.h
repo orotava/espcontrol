@@ -16,7 +16,8 @@ inline int content_right_padding(int line_height) {
 }
 
 inline int width_for_text(int line_height, int text_width, bool slider) {
-  const long long minimum = static_cast<long long>(line_height) * (slider ? 7 : 9) / (slider ? 1 : 2);
+  // Slider pills follow their displayed content instead of reserving a wide track.
+  const long long minimum = slider ? 0 : static_cast<long long>(line_height) * 9 / 2;
   const long long natural = static_cast<long long>(text_width) +
     content_left_padding(line_height) + content_right_padding(line_height) +
     line_height / 3 + line_height;

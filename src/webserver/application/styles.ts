@@ -88,7 +88,7 @@ export function createWebStyles(dragAnimation: boolean): string {
         ".sp-badge-row .sp-badge-add{align-self:center;height:calc(var(--btn-label)*2.4);min-height:0;width:calc(var(--btn-label)*2.4);min-width:calc(var(--btn-label)*2.4);max-width:calc(var(--btn-label)*2.4);padding:0;border:1px dashed var(--preview-border);border-radius:999px;background:transparent!important;display:flex;align-items:center;justify-content:center;transition:border-color .2s,background-color .2s}" +
         ".sp-badge-row .sp-badge-add:hover:not(:disabled){border-color:var(--accent-hover);background:var(--accent-soft)!important}" +
         ".sp-badge-row .sp-badge-add .mdi{font-size:calc(var(--btn-label)*1.2)}.sp-badge-row .sp-badge-add:disabled{opacity:.45;cursor:not-allowed}" +
-        ".sp-badge-row .sp-badge-slider{min-width:calc(var(--btn-label)*8.4)}" +
+        ".sp-badge-row .sp-btn.sp-badge-slider{min-width:0}" +
         ".sp-has-badge-row .sp-main{top:calc(var(--grid-top) + var(--btn-label)*3.6)}" +
         ".sp-badge-list{display:flex;flex-direction:column;gap:10px}" +
         ".sp-badge-management{display:flex;gap:8px}" +

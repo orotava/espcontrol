@@ -6438,6 +6438,17 @@ async function assertBadgeJourney(browser, testCase) {
     assert.strictEqual(await page.locator(".sp-badge-slider .sp-badge-fill").count(), 1);
     assert.strictEqual(await page.locator(".sp-badge-slider .sp-badge-fill").evaluate(fill => getComputedStyle(fill).opacity), "1",
       "The badge slider fill uses the full primary color");
+    const sliderWidth = await page.locator(".sp-badge-slider").evaluate(badge => {
+      const style = getComputedStyle(badge);
+      const content = badge.querySelector(".sp-badge-content");
+      const childrenWidth = Array.from(content.children).reduce((width, child) => width + child.getBoundingClientRect().width, 0);
+      const paddingAndBorder = [style.paddingLeft, style.paddingRight, style.borderLeftWidth, style.borderRightWidth]
+        .reduce((width, value) => width + parseFloat(value), 0);
+      return { actual: badge.getBoundingClientRect().width,
+        content: childrenWidth + parseFloat(getComputedStyle(content).columnGap) + paddingAndBorder };
+    });
+    assert(Math.abs(sliderWidth.actual - sliderWidth.content) < 2,
+      "Slider badges fit the icon, displayed value and padding without a fixed minimum width");
     const geometry = await page.locator('.sp-badge-row [data-badge-index="0"]').evaluate(badge => {
       const bounds = badge.getBoundingClientRect();
       const text = badge.querySelector(".sp-badge-text");
