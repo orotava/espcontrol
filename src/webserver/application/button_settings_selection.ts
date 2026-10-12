@@ -188,7 +188,7 @@ export function createButtonSettingsSelectionFeature(runtime: UiRuntimeState, cl
             (els.topbar && els.topbar.contains(target)) ||
             (els.selectionBar && els.selectionBar.contains(target)) ||
             (els.settingsOverlay && els.settingsOverlay.contains(target)) ||
-            (target.closest && target.closest(".sp-badge-settings-overlay, .sp-badge-row")) ||
+            (target.closest && target.closest(".sp-badge-settings-overlay, .sp-badge-row, .sp-transfer-overlay")) ||
             dependencies.contextMenuContains(target) ||
             (target.closest && target.closest(".sp-ctx-menu")));
     }

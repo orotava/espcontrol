@@ -65,6 +65,7 @@ export interface PreviewContextMenuFeature {
 }
 
 export interface BadgeContextMenuActions {
+    selectionCount?: number;
     edit(): void;
     duplicate(): void;
     copy(): void;
@@ -361,13 +362,15 @@ export function createPreviewContextMenuFeature(dependencies: PreviewContextMenu
             addCtxItem("content-paste", "Paste", actions.paste);
             addCtxDivider();
         }
-        addCtxItem("pencil", "Edit Badge", actions.edit);
+        const count = actions.selectionCount || 1;
+        const label = (single: string, plural: string) => count === 1 ? single : plural + " " + count + " Badges";
+        addCtxItem("pencil", label("Edit Badge", "Edit"), actions.edit);
         addCtxDivider();
-        addCtxItem("content-copy", "Duplicate", actions.duplicate);
-        addCtxItem("clipboard-outline", "Copy", actions.copy);
-        addCtxItem("code-json", "Copy Code", actions.copyCode);
-        addCtxItem("content-cut", "Cut", actions.cut);
-        addCtxItem("delete", "Delete", actions.delete, true);
+        addCtxItem("content-copy", label("Duplicate", "Duplicate"), actions.duplicate);
+        addCtxItem("clipboard-outline", label("Copy", "Copy"), actions.copy);
+        addCtxItem("code-json", count === 1 ? "Copy Code" : "Copy " + count + " Badges as Code", actions.copyCode);
+        addCtxItem("content-cut", label("Cut", "Cut"), actions.cut);
+        addCtxItem("delete", label("Delete", "Delete"), actions.delete, true);
         document.body.appendChild(ctxMenu);
         positionMenu(ctxMenu, e);
     }

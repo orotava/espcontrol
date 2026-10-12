@@ -14,10 +14,11 @@ The row stays one badge high; swipe horizontally if the badges do not all fit.
 
 ## Set Up a Badge
 
-1. Open the home screen or subpage in the web editor, choose **Badges**, then
-   **Add badge**. Each page supports up to eight badges.
+1. Open the home screen or subpage in the web editor and click the **+** at the
+   end of the badge row. Use **Show badges** if the row is hidden. Each page
+   supports up to eight badges.
 2. Choose a **Badge Type** from the table below.
-3. Enter its **Entity** or choose its destination **Subpage**. Open **Badge
+3. Enter its **Entity** or create its own unique **Subpage**. Open **Badge
    Settings** for the icon and optional display settings, as with card setup.
 4. For a Sensor, its Entity supplies the reading. For other types showing a
    live value, choose a **Display Entity**. Optionally select an attribute,
@@ -25,13 +26,20 @@ The row stays one badge high; swipe horizontally if the badges do not all fit.
    the slider's own value.
 5. Turn on **Lit When Active** if you want the badge to use the active colour.
 
-Click a badge in the preview to edit it. Use **Move left**, **Move right**, or
-**Delete** in its settings to manage the row. **Save** writes badge settings
-independently of card settings. Deleting the last badge removes the row and
-returns its height to the grid.
+Click a badge to select it, then choose **Edit** in the edit bar. Right-click
+a badge or use the bar's **…** menu to edit, duplicate, copy, cut or delete it.
+Drag badges to reorder them; the **+** stays at the end. **Save** writes badge
+settings independently of card settings. The empty row keeps its **+** in the
+editor so you can add badges again.
 
-The trash and arrow buttons sit beside **Save**. Close the dialog to discard
-unsaved edits.
+Use **Ctrl-click** or **Cmd-click** to add or remove badges from the selection,
+or **Shift-click** to select a range. Choose **Edit** to change the selected
+badges together. Only fields you change are applied; mixed values, entities
+and each badge's unique subpage link stay intact when left untouched. Selecting
+badges of the same type also lets you edit their Entity together. The context
+menu's copy, duplicate, cut and delete actions apply to the whole selection.
+
+Close the dialog or choose **Cancel** to discard unsaved edits.
 
 Badge rows require firmware that supports them. They are included in exported
 configuration backups; update older panels before restoring a backup that
@@ -40,7 +48,7 @@ contains rows.
 | Badge Type | Behaviour |
 | --- | --- |
 | Sensor | Shows an entity's reading without an action. |
-| Subpage | Opens the subpage you select. Renaming or moving that Subpage card keeps the link. Deleting it requires choosing a new destination. |
+| Subpage | Opens its own unique subpage, with a separate editable card grid. |
 | Modal | Opens a supported control card already configured on this panel, including one inside a subpage. Closing it returns to the current page. |
 | Switch | Toggles a light, switch, input boolean, or fan. |
 | Button | Presses a Home Assistant button or input button. |

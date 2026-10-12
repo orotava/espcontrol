@@ -21,6 +21,7 @@ import type { RuntimeSubpage } from "../state/types";
 import type { BadgeContextMenuActions, PreviewContextMenuFeature } from "./preview_context_menu";
 import { badgeAction } from "../model/badge";
 import { configOptionValue, setConfigOptionValue } from "../model/config_primitives";
+import { renderBadgeBulkSettings, type BadgeBulkSettings } from "./badge_bulk_settings";
 
 export interface BadgeRowFeature {
   render(): void;
@@ -39,7 +40,7 @@ export function createBadgeRowFeature(deps: {
   fields: ControlsFieldsFeature; iconPicker: ButtonSettingsIconPickerFeature;
   entities: Pick<EntityStateFeature, "entityInput">;
   contextMenu: Pick<PreviewContextMenuFeature, "showBadge">;
-  showCopyCode(button: CardConfig): void;
+  showCopyCode(button: CardConfig | CardConfig[]): void;
   shell: Pick<ControlsShellFeature, "isConfigLocked" | "showBanner" | "createActionButton">;
   renderPreview(): void;
   prepareBadgeSelection(): void;
@@ -51,8 +52,9 @@ export function createBadgeRowFeature(deps: {
   let modal: HTMLElement | null = null;
   let config: HTMLElement | null = null;
   let draft: { page: number; index: number; button: CardConfig } | null = null;
-  let selectedBadge: { page: number; index: number } | null = null;
-  let badgeClipboard: CardConfig | null = null;
+  let selectedBadges: { page: number; indices: number[]; anchor: number } | null = null;
+  let bulkDraft: { page: number; indices: number[]; settings: BadgeBulkSettings } | null = null;
+  let badgeClipboard: CardConfig[] | null = null;
   let saving = false;
   let badgesHidden = false;
   let draggedIndex = -1;
@@ -61,20 +63,22 @@ export function createBadgeRowFeature(deps: {
   const badges = (page = pageIndex()) => state.badgeRows[String(page)] || [];
 
   function currentSelection() {
-    if (!selectedBadge || selectedBadge.page !== pageIndex() || selectedBadge.index >= badges().length) {
-      selectedBadge = null;
+    if (!selectedBadges || selectedBadges.page !== pageIndex()) {
+      selectedBadges = null;
       return null;
     }
-    return selectedBadge;
+    selectedBadges.indices = selectedBadges.indices.filter(index => index >= 0 && index < badges().length);
+    if (!selectedBadges.indices.length) { selectedBadges = null; return null; }
+    return selectedBadges;
   }
 
-  function button(label: string, action: () => void, className = "sp-action-btn", icon?: string, ariaLabel?: string): HTMLButtonElement {
+  function button(label: string, action: (event: MouseEvent) => void, className = "sp-action-btn", icon?: string, ariaLabel?: string): HTMLButtonElement {
     const element = shell.createActionButton(className, label, icon, ariaLabel) as HTMLButtonElement;
     element.type = "button";
-    element.addEventListener("click", () => { if (!saving && !shell.isConfigLocked()) action(); });
+    element.addEventListener("click", event => { if (!saving && !shell.isConfigLocked()) action(event); });
     return element;
   }
-  function close() { if (saving) return; draft = null; overlay?.classList.remove("sp-visible"); deps.renderPreview(); }
+  function close() { if (saving) return; draft = null; bulkDraft = null; selectedBadges = null; overlay?.classList.remove("sp-visible"); deps.renderPreview(); }
 
   function ensureUi() {
     if (row || !els.previewScreen) return;
@@ -101,6 +105,9 @@ export function createBadgeRowFeature(deps: {
     row.replaceChildren();
     const items = badges().map(cloneCardConfig);
     if (draft && draft.page === pageIndex()) items[draft.index] = draft.button;
+    if (bulkDraft && bulkDraft.page === pageIndex()) {
+      for (const index of bulkDraft.indices) items[index] = bulkDraft.settings.apply(items[index]!);
+    }
     const badgeRowAvailable = state.badgeRowsSupported && state.badgeRowsReady;
     els.previewScreen.classList.toggle("sp-has-badge-row", badgeRowAvailable && !badgesHidden);
     row.hidden = !badgeRowAvailable || badgesHidden;
@@ -111,20 +118,23 @@ export function createBadgeRowFeature(deps: {
     const selection = currentSelection();
     items.forEach((config, index) => {
       const preview = deps.cards.definitions.badge!.renderPreview!(config, { escHtml }) as { buttonClass: string; iconHtml: string };
-      const selected = selection?.page === pageIndex() && selection.index === index;
-      const item = button("", () => selectBadge(index), "sp-btn " + preview.buttonClass + (selected ? " sp-selected" : ""));
+      const selected = selection?.indices.includes(index);
+      const item = button("", event => selectBadge(index, event), "sp-btn " + preview.buttonClass + (selected ? " sp-selected" : ""));
       item.innerHTML = preview.iconHtml;
       item.style.backgroundColor = "#" + colors.surfaceCard;
       item.setAttribute("data-badge-index", String(index));
       item.setAttribute("aria-label", "Select badge " + (config.label || index + 1));
+      item.setAttribute("aria-pressed", String(!!selected));
       item.draggable = !saving && !shell.isConfigLocked();
       item.disabled = saving || shell.isConfigLocked();
       bindDrag(item, index);
+      item.addEventListener("mousedown", event => { if (event.shiftKey || event.ctrlKey || event.metaKey) event.preventDefault(); });
       item.addEventListener("contextmenu", event => {
         event.preventDefault();
         event.stopPropagation();
-        selectBadge(index);
-        deps.contextMenu.showBadge(event, badgeContextMenuActions(index));
+        if (saving || shell.isConfigLocked()) return;
+        selectBadge(index, undefined, true);
+        deps.contextMenu.showBadge(event, badgeContextMenuActions());
       });
       group.appendChild(item);
     });
@@ -147,14 +157,30 @@ export function createBadgeRowFeature(deps: {
     group.appendChild(add);
   }
 
-  function selectBadge(index: number) {
-    selectedBadge = { page: pageIndex(), index };
+  function selectBadge(index: number, event?: MouseEvent, contextMenu = false) {
+    const selected = currentSelection();
+    let indices = selected?.indices.slice() || [];
+    let anchor = selected?.anchor ?? index;
+    if (contextMenu) {
+      if (!indices.includes(index)) indices = indices.length > 1 ? [...indices, index] : [index];
+    } else if (event?.shiftKey && selected) {
+      event.preventDefault();
+      indices = Array.from({ length: Math.abs(index - anchor) + 1 }, (_, offset) => Math.min(index, anchor) + offset);
+    } else if (event?.ctrlKey || event?.metaKey) {
+      event.preventDefault();
+      indices = indices.includes(index) ? indices.filter(value => value !== index) : [...indices, index];
+      anchor = index;
+    } else {
+      indices = indices.length === 1 && indices[0] === index ? [] : [index];
+      anchor = index;
+    }
+    selectedBadges = indices.length ? { page: pageIndex(), indices, anchor } : null;
     deps.prepareBadgeSelection();
     deps.renderPreview();
   }
 
   function addBadge() {
-    selectedBadge = null;
+    selectedBadges = null;
     deps.prepareBadgeSelection();
     deps.renderPreview();
     chooseType();
@@ -199,31 +225,36 @@ export function createBadgeRowFeature(deps: {
     if (from < 0 || from >= next.length || to < 0 || from === to) return;
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved!);
-    if (selectedBadge?.page === page) {
-      if (selectedBadge.index === from) selectedBadge.index = to;
-      else if (from < selectedBadge.index && selectedBadge.index <= to) selectedBadge.index--;
-      else if (to <= selectedBadge.index && selectedBadge.index < from) selectedBadge.index++;
+    if (selectedBadges?.page === page) {
+      const remap = (index: number) => index === from ? to
+        : from < index && index <= to ? index - 1 : to <= index && index < from ? index + 1 : index;
+      selectedBadges.indices = selectedBadges.indices.map(remap);
+      selectedBadges.anchor = remap(selectedBadges.anchor);
     }
     void save(next, page, false);
   }
 
   function clearSelection() {
-    selectedBadge = null;
+    selectedBadges = null;
   }
 
   function hasSelection() {
     return currentSelection() !== null;
   }
 
-  function badgeContextMenuActions(index: number): BadgeContextMenuActions {
+  function badgeContextMenuActions(): BadgeContextMenuActions {
+    const selected = currentSelection()!;
+    const indices = selected.indices.slice().sort((a, b) => a - b);
+    const copied = () => indices.map(index => cloneBadgeForClipboard(badges(selected.page)[index]!));
     return {
-      edit: () => edit(index),
-      duplicate: () => duplicateBadge(index),
-      copy: () => { badgeClipboard = cloneBadgeForClipboard(badges()[index]!); },
-      copyCode: () => deps.showCopyCode(cloneBadgeForClipboard(badges()[index]!)),
-      cut: () => cutBadge(index),
-      delete: () => deleteBadge(index),
-      ...(badgeClipboard ? { paste: () => pasteBadge(index + 1) } : {}),
+      selectionCount: indices.length,
+      edit: editSelectedBadges,
+      duplicate: () => duplicateBadges(indices),
+      copy: () => { badgeClipboard = copied(); },
+      copyCode: () => deps.showCopyCode(copied()),
+      cut: () => { badgeClipboard = copied(); deleteSelectedBadges(); },
+      delete: deleteSelectedBadges,
+      ...(badgeClipboard ? { paste: () => pasteBadge(indices[indices.length - 1]! + 1) } : {}),
     };
   }
 
@@ -232,18 +263,18 @@ export function createBadgeRowFeature(deps: {
     if (!selected) return false;
     const label = document.createElement("span");
     label.className = "sp-selection-label";
-    label.textContent = "1 badge selected";
+    label.textContent = selected.indices.length === 1 ? "1 badge selected" : selected.indices.length + " badges selected";
     container.appendChild(label);
     const actions = document.createElement("div");
     actions.className = "sp-selection-actions";
-    actions.appendChild(button("Edit", () => edit(selected.index), "sp-selection-btn sp-selection-btn-primary", "pencil"));
+    actions.appendChild(button("Edit", editSelectedBadges, "sp-selection-btn sp-selection-btn-primary", "pencil"));
     const menu = shell.createActionButton("sp-selection-btn", "", "dots-horizontal", "Badge actions") as HTMLButtonElement;
     menu.type = "button";
     menu.addEventListener("click", event => {
       event.preventDefault();
       event.stopPropagation();
       if (!saving && !shell.isConfigLocked()) {
-        deps.contextMenu.showBadge(event, badgeContextMenuActions(selected.index));
+        deps.contextMenu.showBadge(event, badgeContextMenuActions());
       }
     });
     actions.appendChild(menu);
@@ -251,18 +282,14 @@ export function createBadgeRowFeature(deps: {
     return true;
   }
 
-  function deleteSelectedBadge() {
+  function deleteSelectedBadges() {
     const selected = currentSelection();
     if (!selected) return;
-    const next = badges(selected.page).map(cloneCardConfig);
-    const [removed] = next.splice(selected.index, 1);
-    selectedBadge = null;
-    void save(next, selected.page, false, orphanBadgePage(removed!, next, selected.page));
-  }
-
-  function deleteBadge(index: number) {
-    selectedBadge = { page: pageIndex(), index };
-    deleteSelectedBadge();
+    const removed = badges(selected.page).filter((_, index) => selected.indices.includes(index));
+    const next = badges(selected.page).filter((_, index) => !selected.indices.includes(index)).map(cloneCardConfig);
+    selectedBadges = null;
+    const orphanPages = [...new Set(removed.map(badge => orphanBadgePage(badge, next, selected.page)).filter((slot): slot is number => slot !== null))];
+    void save(next, selected.page, false, orphanPages);
   }
 
   function cloneBadgeForClipboard(source: CardConfig): CardConfig {
@@ -271,34 +298,30 @@ export function createBadgeRowFeature(deps: {
     return copy;
   }
 
-  function duplicateBadge(index: number) {
+  function duplicateBadges(indices: number[]) {
     const page = pageIndex();
     const next = badges(page).map(cloneCardConfig);
-    if (next.length >= MAX_ROW_BADGES) {
+    if (next.length + indices.length > MAX_ROW_BADGES) {
       shell.showBanner("The badge row is full.", "error");
       return;
     }
-    next.splice(index + 1, 0, cloneCardConfig(next[index]!));
-    selectedBadge = { page, index: index + 1 };
+    const insertion = indices[indices.length - 1]! + 1;
+    next.splice(insertion, 0, ...indices.map(index => cloneCardConfig(next[index]!)));
+    selectedBadges = { page, indices: indices.map((_, offset) => insertion + offset), anchor: insertion };
     void save(next, page, false);
   }
 
-  function cutBadge(index: number) {
-    badgeClipboard = cloneBadgeForClipboard(badges()[index]!);
-    deleteBadge(index);
-  }
-
   function pasteBadge(index: number) {
-    if (!badgeClipboard) return;
+    if (!badgeClipboard?.length) return;
     const page = pageIndex();
     const next = badges(page).map(cloneCardConfig);
-    if (next.length >= MAX_ROW_BADGES) {
+    if (next.length + badgeClipboard.length > MAX_ROW_BADGES) {
       shell.showBanner("The badge row is full.", "error");
       return;
     }
     const destination = Math.max(0, Math.min(index, next.length));
-    next.splice(destination, 0, cloneCardConfig(badgeClipboard));
-    selectedBadge = { page, index: destination };
+    next.splice(destination, 0, ...badgeClipboard.map(cloneCardConfig));
+    selectedBadges = { page, indices: badgeClipboard.map((_, offset) => destination + offset), anchor: destination };
     void save(next, page, false);
   }
 
@@ -425,12 +448,13 @@ export function createBadgeRowFeature(deps: {
     modal!.classList.add("sp-card-type-picker-open");
     const grid = document.createElement("div"); grid.className = "sp-card-type-grid";
     if (badgeClipboard) {
+      const pasteLabel = badgeClipboard.length === 1 ? "Paste copied badge" : "Paste copied badges";
       const paste = button("", () => {
         close();
         pasteBadge(badges().length);
       }, "sp-card-type-option");
-      paste.setAttribute("aria-label", "Paste copied badge");
-      paste.innerHTML = '<span class="sp-card-type-icon mdi mdi-content-paste"></span><span class="sp-card-type-copy"><span class="sp-card-type-title">Paste copied badge</span><span class="sp-card-type-description">Add the badge from the clipboard to the end of this row.</span></span>';
+      paste.setAttribute("aria-label", pasteLabel);
+      paste.innerHTML = '<span class="sp-card-type-icon mdi mdi-content-paste"></span><span class="sp-card-type-copy"><span class="sp-card-type-title">' + pasteLabel + '</span><span class="sp-card-type-description">Add the copied badges to the end of this row.</span></span>';
       grid.appendChild(paste);
     }
     for (const type of BADGE_SUBTYPES) {
@@ -446,7 +470,7 @@ export function createBadgeRowFeature(deps: {
     config!.appendChild(actions);
   }
 
-  async function save(next: CardConfig[], page: number, closeEditor: boolean, removePageSlot: number | null = null) {
+  async function save(next: CardConfig[], page: number, closeEditor: boolean, removePageSlots: number[] = []) {
     if (saving || shell.isConfigLocked()) return;
     let value: string;
     try { value = serializeBadgeRow(next); }
@@ -458,7 +482,7 @@ export function createBadgeRowFeature(deps: {
     }
     const result = await deps.native.schedule(current => {
       let updated = updateNativePanelConfigDocument(current, deps.deviceProfile, "settings", badgeRowKey(page), value);
-      if (removePageSlot) {
+      for (const removePageSlot of removePageSlots) {
         updated = updateNativePanelConfigDocument(updated, deps.deviceProfile, "buttons", removePageSlot, "");
         updated = updateNativePanelConfigDocument(updated, deps.deviceProfile, "subpages", removePageSlot, "");
         updated = updateNativePanelConfigDocument(updated, deps.deviceProfile, "settings", badgeRowKey(removePageSlot), "");
@@ -470,10 +494,11 @@ export function createBadgeRowFeature(deps: {
       const closeButton = modal?.querySelector(".sp-settings-close") as HTMLButtonElement | null;
       if (closeButton) closeButton.disabled = false;
       modal?.removeAttribute("aria-busy");
+      if (bulkDraft) modal?.querySelectorAll("button,input,select").forEach(input => (input as HTMLInputElement).disabled = false);
     }
     if (result === "saved") {
       state.badgeRows[String(page)] = next;
-      if (removePageSlot) {
+      for (const removePageSlot of removePageSlots) {
         state.buttons[removePageSlot - 1] = cardContractDefaultConfig("");
         delete state.subpages[String(removePageSlot)];
         delete state.badgeRows[String(removePageSlot)];
@@ -490,6 +515,7 @@ export function createBadgeRowFeature(deps: {
 
   function edit(index: number, subtype?: BadgeSubtype) {
     if (index >= MAX_ROW_BADGES) return;
+    bulkDraft = null;
     config!.replaceChildren();
     draft = { page: pageIndex(), index, button: cloneCardConfig(badges()[index] || cardContractDefaultConfig("badge")) };
     if (subtype) {
@@ -497,6 +523,51 @@ export function createBadgeRowFeature(deps: {
       draft.button.icon = BADGE_SUBTYPES.find(type => type.key === subtype)!.defaultIcon;
     }
     renderEditor(); deps.renderPreview();
+  }
+
+  function editSelectedBadges() {
+    const selected = currentSelection();
+    if (!selected) return;
+    if (selected.indices.length === 1) { edit(selected.indices[0]!); return; }
+    draft = null;
+    header("Edit " + selected.indices.length + " Badges");
+    const note = document.createElement("p");
+    note.className = "sp-setting-note";
+    note.textContent = "Only fields you change will be applied to the selected badges. Other settings keep their existing values.";
+    config!.appendChild(note);
+    const panel = document.createElement("div");
+    panel.className = "sp-panel";
+    const indices = selected.indices.slice();
+    const page = selected.page;
+    const settings = renderBadgeBulkSettings(panel, indices.map(index => badges(page)[index]!), {
+      document, fields, entityInput: deps.entities.entityInput, iconPickerField,
+      onChange: () => deps.renderPreview(),
+    });
+    bulkDraft = { page, indices, settings };
+    fields.groupCardSettingsFields(panel, "sp-badge-bulk-", "Badge Settings");
+    const actions = document.createElement("div");
+    actions.className = "sp-btn-row sp-btn-row--save";
+    actions.appendChild(button("Cancel", close, "sp-action-btn sp-cancel-btn"));
+    actions.appendChild(button("Save", () => {
+      const error = settings.validate();
+      if (error) { shell.showBanner(error, "error"); return; }
+      const next = badges(page).map((badge, index) => indices.includes(index) ? settings.apply(badge) : cloneCardConfig(badge));
+      void save(next, page, true);
+    }, "sp-action-btn sp-save-btn"));
+    panel.appendChild(actions);
+    config!.appendChild(panel);
+    deps.renderPreview();
+  }
+
+  function iconPickerField(pickerId: string, inputId: string, value: string, onSelect: (value: string) => void, label: string) {
+    const wrapper = document.createElement("div"); wrapper.className = "sp-field";
+    wrapper.appendChild(fields.fieldLabel(label, inputId));
+    const picker = document.createElement("div"); picker.id = pickerId; picker.className = "sp-icon-picker";
+    picker.appendChild(mdiIcon(value, "sp-icon-picker-preview mdi"));
+    const input = fields.textInput(inputId, value, "Search icons…"); input.className = "sp-icon-picker-input";
+    picker.appendChild(input);
+    const dropdown = document.createElement("div"); dropdown.className = "sp-icon-dropdown"; picker.appendChild(dropdown);
+    wrapper.appendChild(picker); deps.iconPicker.init(picker, value, onSelect); return wrapper;
   }
 
   function renderEditor() {
@@ -520,16 +591,7 @@ export function createBadgeRowFeature(deps: {
       requireEntityDomain(input: HTMLInputElement, domains: string[], message: string) {
         required.push({ input, message, valid: () => domains.includes(input.value.split(".")[0] || "") });
       },
-      iconPickerField(pickerId: string, inputId: string, value: string, onSelect: (value: string) => void, label: string) {
-        const wrapper = document.createElement("div"); wrapper.className = "sp-field";
-        wrapper.appendChild(fields.fieldLabel(label, inputId));
-        const picker = document.createElement("div"); picker.id = pickerId; picker.className = "sp-icon-picker";
-        picker.appendChild(mdiIcon(value, "sp-icon-picker-preview mdi"));
-        const input = fields.textInput(inputId, value, "Search icons…"); input.className = "sp-icon-picker-input";
-        picker.appendChild(input);
-        const dropdown = document.createElement("div"); dropdown.className = "sp-icon-dropdown"; picker.appendChild(dropdown);
-        wrapper.appendChild(picker); deps.iconPicker.init(picker, value, onSelect); return wrapper;
-      },
+      iconPickerField,
     };
     deps.cards.definitions.badge!.renderSettings!(panel, current.button, current.index, helpers);
     const settings = fields.groupCardSettingsFields(panel, "sp-badge-inp-", "Badge Settings");
@@ -553,7 +615,8 @@ export function createBadgeRowFeature(deps: {
       management.appendChild(button("", () => {
         const next = badges(current.page).map(cloneCardConfig);
         const [removed] = next.splice(current.index, 1);
-        void save(next, current.page, true, orphanBadgePage(removed!, next, current.page));
+        const orphan = orphanBadgePage(removed!, next, current.page);
+        void save(next, current.page, true, orphan === null ? [] : [orphan]);
       }, "sp-action-btn sp-delete-btn", "trash-can-outline", "Delete"));
       actions.appendChild(management);
     }
@@ -569,7 +632,7 @@ export function createBadgeRowFeature(deps: {
       state.badgeRowsSupported = deps.native.client?.badgeRowsSupported() || false;
       if (!state.badgeRowsSupported) return;
       const document = await deps.native.client!.read();
-      if (generation !== loadGeneration || saving || draft) return;
+      if (generation !== loadGeneration || saving || draft || bulkDraft) return;
       state.badgeRows = badgeRowsFromSettings(document.settings);
       state.badgeRowsReady = true;
       deps.renderPreview();

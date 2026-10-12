@@ -590,7 +590,7 @@ export function createPreviewClipboardFeature(
     function showCopyCodeForConfig(button: any) {
         var code: any;
         try {
-            code = cardTransferCodeForConfigs([button]);
+            code = cardTransferCodeForConfigs(Array.isArray(button) ? button : [button]);
         }
         catch (error: any) {
             showBanner(error.cardTransferMessage || error.message || "Could not create badge code.", "error");
