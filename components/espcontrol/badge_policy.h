@@ -61,6 +61,10 @@ inline std::string action(const std::string &value) {
          value == "slider" || value == "card" ? value : "display";
 }
 
+inline bool subpage_unsupported(const std::string &action, const std::string &card_type) {
+  return action == "subpage" || card_type == "subpage";
+}
+
 inline bool button_supported(const std::string &entity) {
   return number_slider::has_domain(entity, "button") || number_slider::has_domain(entity, "input_button");
 }

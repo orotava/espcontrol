@@ -24,6 +24,11 @@ int main() {
   assert(action("erase") == "display");
   assert(action("button") == "button");
   assert(action("card") == "card");
+  assert(subpage_unsupported("subpage", ""));
+  assert(subpage_unsupported("subpage", "subpage"));
+  assert(subpage_unsupported("card", "subpage"));
+  assert(!subpage_unsupported("card", "media"));
+  assert(!subpage_unsupported("modal", ""));
   assert(card_options("badge_card_type=media,badge_action=card,media_tabs=progress|volume,active_color,card_off_color=112233") ==
          "media_tabs=progress|volume,active_color,card_off_color=112233");
   assert(card_options("badge_page=8,ssid64=YWJjLGQ=,,hidden,badge_attribute=x") == "ssid64=YWJjLGQ=,hidden");

@@ -15,8 +15,6 @@ struct BadgeCardRuntime {
   espcontrol::badge::CardContent content = espcontrol::badge::CardContent::AUTO;
   std::string caption;
   bool width_fitted = false;
-  bool has_sensor = false, text_sensor = false, has_icon_on = false;
-  const char *icon_off = nullptr, *icon_on = nullptr;
 
   void refresh() {
     auto *ctx = badge;
@@ -63,11 +61,6 @@ struct BadgeCardRuntime {
       if (std::strcmp(icon, lv_label_get_text(ctx->icon_label))) lv_label_set_display_text(ctx->icon_label, icon);
     }
     lv_obj_t *state_button = slot.btn;
-    if (config.type == "subpage") {
-      if (const auto *parent = navigation_find_slot_target(ctx->page)) {
-        if (parent->button) state_button = parent->button;
-      }
-    }
     const bool unavailable = lv_obj_has_state(state_button, LV_STATE_DISABLED);
     set_card_disabled_state(ctx->button, unavailable);
     set_card_checked_state(ctx->button, lv_obj_has_state(state_button, LV_STATE_CHECKED));
@@ -146,12 +139,6 @@ inline bool badge_card_bind_runtime(BadgeCardRuntime &runtime, const CardPalette
   const auto display = display_profile_from_grid_config(grid);
   const auto palette = card_palette_for_config(base_palette, config, display);
   HaCallbackOwnerScope owner(slot.btn);
-  if (config.type == "subpage") {
-    NavigationDriverParentState parent;
-    parent.has_sensor = &runtime.has_sensor; parent.sensor_text_mode = &runtime.text_sensor;
-    parent.has_icon_on = &runtime.has_icon_on; parent.icon_off = &runtime.icon_off; parent.icon_on = &runtime.icon_on;
-    return navigation_driver_bind_main(slot, config, context, parent);
-  }
   if (image_driver_bind_subpage(slot, config, context, grid, palette)) return true;
   if (wifi_qr_driver_bind_subpage(slot, config, context)) return true;
   if (light_control_driver_bind_subpage(slot, config, context, light_control_driver_environment(palette, display, slot))) return true;
@@ -188,7 +175,7 @@ inline void badge_card_runtime_setup(BadgeCtx *ctx, const ParsedCfg &config,
   runtime->badge = ctx; runtime->grid = grid; runtime->config = config;
   runtime->config.type = cfg_option_value(config.options, "badge_card_type");
   if (runtime->config.type == "switch") runtime->config.type.clear();
-  if (runtime->config.type == "badge" || !card_runtime_context(runtime->config, Surface::SUBPAGE).known) {
+  if (runtime->config.type == "badge" || runtime->config.type == "subpage" || !card_runtime_context(runtime->config, Surface::SUBPAGE).known) {
     set_card_disabled_state(ctx->button, true);
     delete runtime;
     return;

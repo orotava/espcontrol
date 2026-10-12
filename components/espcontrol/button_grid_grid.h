@@ -2079,8 +2079,6 @@ inline void grid_phase2(
   lv_coord_t mp_pad_row = lv_obj_get_style_pad_row(main_page_obj, LV_PART_MAIN);
   lv_coord_t mp_pad_col = lv_obj_get_style_pad_column(main_page_obj, LV_PART_MAIN);
 
-  const auto badge_destinations = badge_subpage_destinations();
-
   for (int si = 0; si < NS; si++) {
     ParsedCfg p = parse_cfg(slots[si].config->state);
     const auto parent_context = card_runtime_context(p);
@@ -2094,7 +2092,7 @@ inline void grid_phase2(
       optional_text_state(sp_ext5_configs, si) +
       optional_text_state(sp_ext6_configs, si) +
       optional_text_state(sp_ext7_configs, si);
-    if (sp_cfg.empty() && espcontrol::badge::configuration().page(si + 1).empty() && !badge_destinations[si + 1]) continue;
+    if (sp_cfg.empty() && espcontrol::badge::configuration().page(si + 1).empty()) continue;
 
     auto sp_btns = parse_subpage_config(sp_cfg);
     std::string sp_order_str = get_subpage_order(sp_cfg);

@@ -16,11 +16,9 @@ import type { ButtonSettingsIconPickerFeature } from "./button_settings_icon_pic
 import type { EntityStateFeature } from "./entity_state";
 import type { ControlsShellFeature } from "./controls_shell";
 import type { UiRuntimeState } from "./state";
-import type { ApplicationLayoutState } from "./application_context";
 import type { ConfigCodecFeature } from "./config_codec";
-import type { RuntimeSubpage } from "../state/types";
 import type { BadgeContextMenuActions, PreviewContextMenuFeature } from "./preview_context_menu";
-import { badgeAction } from "../model/badge";
+import { isSubpageBadge } from "../model/badge";
 import { configOptionValue, setConfigOptionValue, lighterCardColor } from "../model/config_primitives";
 import { renderBadgeBulkSettings, type BadgeBulkSettings } from "./badge_bulk_settings";
 import { badgeCardType, badgeToCard, updateBadgeFromCard, cardBadgeUsesSlider } from "../model/badge_card";
@@ -40,8 +38,7 @@ export interface BadgeRowFeature {
 export function createBadgeRowFeature(deps: {
   document: Document; runtime: UiRuntimeState; cards: CardRegistry;
   native: NativePanelConfigController; deviceProfile: string;
-  layout: Pick<ApplicationLayoutState, "previewSlots">;
-  codec: Pick<ConfigCodecFeature, "serializeButtonConfig" | "serializeSubpageConfig" | "buildSubpageGrid" | "enterSubpage" | "normalizeButtonConfig">;
+  codec: Pick<ConfigCodecFeature, "normalizeButtonConfig">;
   fields: ControlsFieldsFeature; iconPicker: ButtonSettingsIconPickerFeature;
   entities: Pick<EntityStateFeature, "entityInput">;
   contextMenu: Pick<PreviewContextMenuFeature, "showBadge">;
@@ -61,8 +58,6 @@ export function createBadgeRowFeature(deps: {
   let selectedBadges: { page: number; indices: number[]; anchor: number } | null = null;
   let bulkDraft: { page: number; indices: number[]; settings: BadgeBulkSettings } | null = null;
   let badgeClipboard: CardConfig[] | null = null;
-  type CopiedPage = { parent: CardConfig; page: RuntimeSubpage; badges: CardConfig[] };
-  const copiedPages = new WeakMap<CardConfig, CopiedPage>();
   let saving = false;
   let badgesHidden = false;
   let draggedIndex = -1;
@@ -299,7 +294,7 @@ export function createBadgeRowFeature(deps: {
     const selected = currentSelection()!;
     const indices = selected.indices.slice().sort((a, b) => a - b);
     const copied = () => {
-      try { return indices.map(index => cloneBadgeForClipboard(badges(selected.page)[index]!)); }
+      try { return indices.map(index => cloneCardConfig(badges(selected.page)[index]!)); }
       catch (error) { shell.showBanner((error as Error).message, "error"); return null; }
     };
     return {
@@ -341,31 +336,9 @@ export function createBadgeRowFeature(deps: {
   function deleteSelectedBadges() {
     const selected = currentSelection();
     if (!selected) return;
-    const removed = badges(selected.page).filter((_, index) => selected.indices.includes(index));
     const next = badges(selected.page).filter((_, index) => !selected.indices.includes(index)).map(cloneCardConfig);
     selectedBadges = null;
-    const orphanPages = [...new Set(removed.map(badge => orphanBadgePage(badge, selected.page)).filter((slot): slot is number => slot !== null))];
-    void save(next, selected.page, false, orphanPages);
-  }
-
-  function cloneBadgeForClipboard(source: CardConfig, ancestors: ReadonlySet<number> = new Set()): CardConfig {
-    const copy = cloneCardConfig(source);
-    if (badgeAction(copy) === "subpage") {
-      const slot = Number(configOptionValue(source.options, "badge_page"));
-      const saved = copiedPages.get(source);
-      if (saved) {
-        copiedPages.set(copy, { parent: cloneCardConfig(saved.parent), page: structuredClone(saved.page),
-          badges: saved.badges.map(item => cloneBadgeForClipboard(item, ancestors)) });
-      } else if (slot > 0 && state.buttons[slot - 1]?.type === "subpage") {
-        if (ancestors.has(slot)) throw new Error("This page links back to itself. Remove the circular badge link before copying it.");
-        const path = new Set([...ancestors, slot]);
-        copiedPages.set(copy, { parent: cloneCardConfig(state.buttons[slot - 1]!),
-          page: structuredClone(state.subpages[String(slot)] || { order: [], buttons: [], grid: [], sizes: {}, backLabel: "Back" }),
-          badges: badges(slot).map(item => cloneBadgeForClipboard(item, path)) });
-      }
-      copy.options = setConfigOptionValue(copy.options, "badge_page", "");
-    }
-    return copy;
+    void save(next, selected.page, false);
   }
 
   function duplicateBadges(indices: number[]) {
@@ -376,7 +349,7 @@ export function createBadgeRowFeature(deps: {
       return;
     }
     const insertion = indices[indices.length - 1]! + 1;
-    try { next.splice(insertion, 0, ...indices.map(index => cloneBadgeForClipboard(next[index]!))); }
+    try { next.splice(insertion, 0, ...indices.map(index => cloneCardConfig(next[index]!))); }
     catch (error) { shell.showBanner((error as Error).message, "error"); return; }
     selectedBadges = { page, indices: indices.map((_, offset) => insertion + offset), anchor: insertion };
     void save(next, page, false);
@@ -391,38 +364,9 @@ export function createBadgeRowFeature(deps: {
       return;
     }
     const destination = Math.max(0, Math.min(index, next.length));
-    next.splice(destination, 0, ...badgeClipboard.map(item => cloneBadgeForClipboard(item)));
+    next.splice(destination, 0, ...badgeClipboard.map(item => cloneCardConfig(item)));
     selectedBadges = { page, indices: badgeClipboard.map((_, offset) => destination + offset), anchor: destination };
     void save(next, page, false);
-  }
-
-  function orphanBadgePage(removed: CardConfig, page: number) {
-    if (badgeAction(removed) !== "subpage") return null;
-    const target = Number(configOptionValue(removed.options, "badge_page"));
-    if (!target || target === page || state.grid.includes(target)) return null;
-    return target;
-  }
-
-  function unusedBadgePages(roots: number[], page: number, next: CardConfig[]): number[] {
-    const candidates = new Set<number>();
-    const visit = (slot: number) => {
-      if (!slot || slot === page || state.grid.includes(slot) || candidates.has(slot)) return;
-      if (state.buttons[slot - 1]?.type !== "subpage") return;
-      candidates.add(slot);
-      for (const item of badges(slot)) if (badgeAction(item) === "subpage") visit(Number(configOptionValue(item.options, "badge_page")));
-    };
-    roots.forEach(visit);
-    let changed: boolean;
-    do {
-      changed = false;
-      for (const [rowPage, row] of Object.entries(state.badgeRows)) {
-        if (candidates.has(Number(rowPage))) continue;
-        for (const item of Number(rowPage) === page ? next : row) {
-          if (badgeAction(item) === "subpage" && candidates.delete(Number(configOptionValue(item.options, "badge_page")))) changed = true;
-        }
-      }
-    } while (changed);
-    return [...candidates];
   }
 
   function renderSelectionControl(container: HTMLElement) {
@@ -434,41 +378,6 @@ export function createBadgeRowFeature(deps: {
     }, "sp-selection-btn", badgesHidden ? "eye-outline" : "eye-off-outline", badgesHidden ? "Show badges" : "Hide badges");
     control.disabled = !state.badgeRowsReady || shell.isConfigLocked();
     container.appendChild(control);
-  }
-
-  function badgeSubpageSettings(panel: HTMLElement, configButton: CardConfig, helpers: any) {
-    const field = document.createElement("div");
-    field.className = "sp-field";
-    field.appendChild(button("Edit Subpage", () => { void editBadgeSubpage(); }, "sp-action-btn sp-edit-subpage-btn"));
-    panel.appendChild(field);
-    helpers.markCardPrimaryField(field, "entity");
-  }
-
-  function firstFreeBadgePageSlot(reserved: Set<number> = new Set()): number {
-    for (let slot = 1; slot <= Math.min(32, deps.layout.previewSlots); slot++) {
-      if (state.grid.includes(slot)) continue;
-      if (reserved.has(slot)) continue;
-      const existing = state.buttons[slot - 1];
-      if (existing && (existing.type || existing.entity || existing.sensor || existing.label)) continue;
-      const page = state.subpages[String(slot)];
-      if (page?.buttons.some(item => Boolean(item.type))) continue;
-      return slot;
-    }
-    return -1;
-  }
-
-  async function editBadgeSubpage() {
-    if (!draft || saving || shell.isConfigLocked()) return;
-    const current = draft;
-    if (current.card) {
-      deps.codec.normalizeButtonConfig(current.card);
-      updateBadgeFromCard(current.button, current.card);
-    }
-    const next = badges(current.page).map(cloneCardConfig);
-    next[current.index] = cloneCardConfig(current.button);
-    if (await save(next, current.page, true)) {
-      deps.codec.enterSubpage(Number(configOptionValue(next[current.index]!.options, "badge_page")));
-    }
   }
 
   function header(title: string) {
@@ -493,7 +402,7 @@ export function createBadgeRowFeature(deps: {
       paste.innerHTML = '<span class="sp-card-type-icon mdi mdi-content-paste"></span><span class="sp-card-type-copy"><span class="sp-card-type-title">' + pasteLabel + '</span><span class="sp-card-type-description">Add the copied badges to the end of this row.</span></span>';
       grid.appendChild(paste);
     }
-    const types = deps.pickerOptions().filter(type => type.key !== "badge");
+    const types = deps.pickerOptions().filter(type => type.key !== "badge" && type.key !== "subpage");
     types.push({ key: "badge-modal", label: "Modal", icon: "card-outline", description: "Open an existing card's control modal.", disabled: false });
     for (const type of types) {
       const item = button("", () => {
@@ -511,62 +420,18 @@ export function createBadgeRowFeature(deps: {
     config!.appendChild(actions);
   }
 
-  async function save(next: CardConfig[], page: number, closeEditor: boolean, removePageSlots: number[] = []) {
+  async function save(next: CardConfig[], page: number, closeEditor: boolean) {
     if (saving || shell.isConfigLocked()) return false;
-    removePageSlots = unusedBadgePages(removePageSlots, page, next);
-    const pageChanges = new Map<number, { parent: CardConfig; page?: RuntimeSubpage; value?: string; badges?: CardConfig[] }>();
     let value: string;
-    try {
-      const prepared = new WeakSet<CardConfig>();
-      const preparePage = (badge: CardConfig) => {
-        if (badgeAction(badge) !== "subpage" || prepared.has(badge)) return;
-        prepared.add(badge);
-        let target = Number(configOptionValue(badge.options, "badge_page"));
-        const existing = target > 0 && state.buttons[target - 1]?.type === "subpage";
-        if (!existing) {
-          target = firstFreeBadgePageSlot(new Set(pageChanges.keys()));
-          if (target < 0) throw new Error("There are no unused slots for a new badge page. Free a card slot and try again.");
-          badge.options = setConfigOptionValue(badge.options, "badge_page", String(target));
-        }
-        if (state.grid.includes(target)) return;
-        const copied = copiedPages.get(badge);
-        const parent = badgeCardType(badge) === "subpage" ? badgeToCard(badge)
-          : copied ? cloneCardConfig(copied.parent) : cardContractDefaultConfig("subpage");
-        parent.label = badge.label || "Subpage";
-        parent.icon = badge.icon;
-        const changed = { ...pageChanges.get(target), parent };
-        if (!existing && !pageChanges.has(target)) {
-          changed.page = copied ? structuredClone(copied.page) : { order: [], buttons: [], grid: [], sizes: {}, backLabel: "Back" };
-          deps.codec.buildSubpageGrid(changed.page);
-          changed.value = deps.codec.serializeSubpageConfig(changed.page);
-          changed.badges = copied ? copied.badges.map(item => cloneBadgeForClipboard(item)) : [];
-        }
-        pageChanges.set(target, changed);
-        changed.badges?.forEach(preparePage);
-      };
-      next.forEach(preparePage);
-      value = serializeBadgeRow(next);
-      // Validate all copied rows before scheduling the atomic write.
-      for (const change of pageChanges.values()) if (change.badges) serializeBadgeRow(change.badges);
-    } catch (error) { shell.showBanner((error as Error).message, "error"); return false; }
+    try { value = serializeBadgeRow(next); }
+    catch (error) { shell.showBanner((error as Error).message, "error"); return false; }
     saving = true;
     if (closeEditor) {
       modal?.setAttribute("aria-busy", "true");
       modal?.querySelectorAll("button,input,select").forEach(input => (input as HTMLInputElement).disabled = true);
     }
     const result = await deps.native.schedule(current => {
-      let updated = updateNativePanelConfigDocument(current, deps.deviceProfile, "settings", badgeRowKey(page), value);
-      for (const [slot, change] of pageChanges) {
-        updated = updateNativePanelConfigDocument(updated, deps.deviceProfile, "buttons", slot, deps.codec.serializeButtonConfig(change.parent));
-        if (change.value !== undefined) updated = updateNativePanelConfigDocument(updated, deps.deviceProfile, "subpages", slot, change.value);
-        if (change.badges) updated = updateNativePanelConfigDocument(updated, deps.deviceProfile, "settings", badgeRowKey(slot), serializeBadgeRow(change.badges));
-      }
-      for (const removePageSlot of removePageSlots) {
-        updated = updateNativePanelConfigDocument(updated, deps.deviceProfile, "buttons", removePageSlot, "");
-        updated = updateNativePanelConfigDocument(updated, deps.deviceProfile, "subpages", removePageSlot, "");
-        updated = updateNativePanelConfigDocument(updated, deps.deviceProfile, "settings", badgeRowKey(removePageSlot), "");
-      }
-      return updated;
+      return updateNativePanelConfigDocument(current, deps.deviceProfile, "settings", badgeRowKey(page), value);
     });
     saving = false;
     if (closeEditor) {
@@ -577,17 +442,6 @@ export function createBadgeRowFeature(deps: {
     }
     if (result === "saved") {
       state.badgeRows[String(page)] = next;
-      for (const [slot, change] of pageChanges) {
-        state.buttons[slot - 1] = change.parent;
-        if (change.page) state.subpages[String(slot)] = change.page;
-        if (change.badges) state.badgeRows[String(slot)] = change.badges;
-      }
-      for (const removePageSlot of removePageSlots) {
-        state.buttons[removePageSlot - 1] = cardContractDefaultConfig("");
-        delete state.subpages[String(removePageSlot)];
-        delete state.badgeRows[String(removePageSlot)];
-        delete state.subpageRaw[String(removePageSlot)];
-      }
       if (closeEditor) close();
       else deps.renderPreview();
       return true;
@@ -670,13 +524,14 @@ export function createBadgeRowFeature(deps: {
     if (!draft) return;
     if (draft.card) updateBadgeFromCard(draft.button, draft.card);
     const cardType = badgeCardType(draft.button);
-    if (cardType !== null && !draft.card) draft.card = badgeToCard(draft.button);
+    if (!isSubpageBadge(draft.button) && cardType !== null && !draft.card) draft.card = badgeToCard(draft.button);
     const settingsOpen = config!.querySelector("#sp-badge-inp-card-settings")?.getAttribute("aria-expanded") === "true";
-    const cardDefinition = cardType !== null ? deps.cards.definitions[cardType]! : null;
+    const unsupported = isSubpageBadge(draft.button);
+    const cardDefinition = !unsupported && cardType !== null ? deps.cards.definitions[cardType]! : null;
     const label = cardDefinition ? deps.pickerOptions().find(type => type.key === (cardContractPickerKey(cardType) || cardType))?.label ||
       (typeof cardDefinition.label === "function" ? cardDefinition.label() : cardDefinition.label)
       : BADGE_SUBTYPES.find(type => type.key === badgeSubtype(draft!.button))?.label || "Badge";
-    header(label + " Badge");
+    header(unsupported ? "Badge unavailable" : label + " Badge");
     const current = draft;
     const settingsButton = current.card || current.button;
     const panel = document.createElement("div"); panel.className = "sp-panel";
@@ -684,12 +539,10 @@ export function createBadgeRowFeature(deps: {
     const helpers = {
       ...fields, idPrefix: "sp-badge-inp-", entityInput: deps.entities.entityInput,
       saveField: () => deps.renderPreview(), renderBadgeSettings: renderEditor,
-      editSubpage: () => { void editBadgeSubpage(); },
       isSub: false, cardSize: 1, clearFieldError: () => {},
       makeIconPicker: iconPickerField,
       precisionField: (id: string, value: string, onChange: EventListener) => fields.selectField("Unit Precision", id, [["0", "10"], ["1", "10.2"], ["2", "10.21"]], value || "0", onChange),
       toggleSection: (label: string, id: string, checked: boolean) => ({ toggle: fields.toggleRow(label, id, checked), section: fields.condField() }),
-      badgeSubpageSettings: (panel: HTMLElement, button: CardConfig) => badgeSubpageSettings(panel, button, helpers),
       bindField(input: HTMLInputElement, field: keyof CardConfig) {
         input.addEventListener("input", () => { settingsButton[field] = input.value; deps.renderPreview(); });
         input.addEventListener("change", () => { settingsButton[field] = input.value; deps.renderPreview(); });
@@ -716,7 +569,12 @@ export function createBadgeRowFeature(deps: {
       return { field, input };
     };
     Object.assign(helpers, { entityField, textField });
-    if (cardDefinition) {
+    if (unsupported) {
+      const notice = document.createElement("p");
+      notice.className = "sp-hint";
+      notice.textContent = "Subpage badges are unavailable. Deleting this badge keeps its stored page.";
+      panel.appendChild(notice);
+    } else if (cardDefinition) {
       cardDefinition.renderSettingsBeforeLabel?.(panel, settingsButton, current.index, helpers);
       if (!cardDefinition.hideLabel) {
         const field = textField("Label", helpers.idPrefix + "label", settingsButton.label, "e.g. Kitchen", "label");
@@ -734,8 +592,6 @@ export function createBadgeRowFeature(deps: {
           deps.renderPreview();
         });
       panel.appendChild(display.field);
-      const editPage = panel.querySelector(".sp-edit-subpage-btn");
-      if (editPage) fields.markCardPrimaryField(editPage, "card");
     } else deps.cards.definitions.badge!.renderSettings!(panel, current.button, current.index, helpers);
     let nameField = panel.querySelector<HTMLElement>('[data-sp-card-primary="name"]');
     if (current.card && badgeCardDisplay(current.button) === "label" && !["clock", "calendar", "screen_lock"].includes(current.card.type)) {
@@ -757,7 +613,7 @@ export function createBadgeRowFeature(deps: {
         toggle.id = "sp-badge-inp-card-settings";
       }
     }
-    const settings = fields.groupCardSettingsFields(panel, "sp-badge-inp-", "Badge Settings");
+    const settings = unsupported ? null : fields.groupCardSettingsFields(panel, "sp-badge-inp-", "Badge Settings");
     if (settingsOpen) settings?.button.click();
     const actions = document.createElement("div"); actions.className = "sp-btn-row sp-btn-row--save";
     const saveButton = button("Save", () => {
@@ -778,9 +634,8 @@ export function createBadgeRowFeature(deps: {
       const management = document.createElement("div"); management.className = "sp-badge-management";
       management.appendChild(button("", () => {
         const next = badges(current.page).map(cloneCardConfig);
-        const [removed] = next.splice(current.index, 1);
-        const orphan = orphanBadgePage(removed!, current.page);
-        void save(next, current.page, true, orphan === null ? [] : [orphan]);
+        next.splice(current.index, 1);
+        void save(next, current.page, true);
       }, "sp-action-btn sp-delete-btn", "trash-can-outline", "Delete"));
       actions.appendChild(management);
     }

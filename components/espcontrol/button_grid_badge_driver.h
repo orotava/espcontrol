@@ -3,10 +3,8 @@
 #include "badge_policy.h"
 
 // Badge visuals own their context through the content object's delete event.
-// The same driver serves the home grid and subpages. Badge navigation resolves
-// a page by its stable slot, including pages reserved exclusively for badges.
+// The same driver serves badge rows on the home grid and ordinary card subpages.
 inline bool espcontrol_open_modal(const std::string &entity_id, bool ui_ready);
-inline bool badge_open_subpage(int slot);
 
 namespace espcontrol::cards {
 
@@ -17,6 +15,7 @@ struct BadgeCtx {
   lv_obj_t *slider = nullptr;
   lv_obj_t *icon_label = nullptr;
   bool card_mode = false;
+  bool unsupported = false;
   std::function<void()> card_refresh;
   std::function<void()> card_click;
   std::function<void()> card_cleanup;
@@ -40,7 +39,6 @@ struct BadgeCtx {
   int text_width_percent = 100;
   bool dragging = false;
   bool media_absolute = true;
-  int page = 0;
   int decimals = 1;
   double level = 0.0;
   CardPadding padding;
@@ -97,12 +95,13 @@ inline void badge_update(BadgeCtx *ctx) {
     if (ctx->card_refresh) ctx->card_refresh();
     return;
   }
+  if (ctx->unsupported) set_card_disabled_state(ctx->button, true);
   const bool control = ctx->action == "toggle" || ctx->action == "button" || ctx->action == "slider";
   const bool available = ctx->action == "slider" ? badge_slider_ready(ctx)
     : ctx->target_available && (ctx->action == "button"
       ? espcontrol::badge::button_supported(ctx->target) : espcontrol::badge::toggle_supported(ctx->target));
   if (control) {
-    set_card_disabled_state(ctx->button, !available);
+    set_card_disabled_state(ctx->button, ctx->unsupported || !available);
     if (!available) ctx->dragging = false;
   }
   // Switch badges use the same checked state as toggle cards, so their live
@@ -168,14 +167,13 @@ inline void badge_driver_fit_width(lv_obj_t *button) {
 }
 
 inline void badge_handle_click(BadgeCtx *ctx) {
-  if (!ctx) return;
-  if (ctx->card_mode && ctx->action != "subpage") {
+  if (!ctx || ctx->unsupported) return;
+  if (ctx->card_mode) {
     if (ctx->card_click) ctx->card_click();
     return;
   }
   if (screen_lock_enabled() || alarm_display_takeover_active()) return;
-  if (ctx->action == "subpage") badge_open_subpage(ctx->page);
-  else if (ctx->action == "modal") espcontrol_open_modal(ctx->target, grid_phase2_complete());
+  if (ctx->action == "modal") espcontrol_open_modal(ctx->target, grid_phase2_complete());
   else if (ctx->action == "button" && ctx->target_available && espcontrol::badge::button_supported(ctx->target)) {
     ha_send_entity_action(ctx->target, espcontrol::badge::button_action(ctx->target));
   }
@@ -220,20 +218,21 @@ inline bool badge_driver_setup_visual(BtnSlot &slot, const ParsedCfg &config,
   ctx->padding = capture_card_padding(slot.btn);
   lv_obj_set_style_pad_all(slot.btn, 0, LV_PART_MAIN);
   ctx->action = espcontrol::badge::action(cfg_option_value(config.options, "badge_action"));
-  ctx->card_mode = !cfg_option_value(config.options, "badge_card_type").empty();
-  ctx->slider_action = ctx->action == "slider";
+  const auto card_type = cfg_option_value(config.options, "badge_card_type");
+  ctx->unsupported = espcontrol::badge::subpage_unsupported(ctx->action, card_type);
+  ctx->card_mode = !ctx->unsupported && !card_type.empty();
+  ctx->slider_action = !ctx->unsupported && ctx->action == "slider";
   ctx->target = config.entity;
   ctx->label = config.label;
   ctx->display_entity = ctx->slider_action ? "" : config.sensor;
   ctx->display_attribute = ctx->slider_action ? "" : cfg_option_value(config.options, "badge_attribute");
   ctx->unit = ctx->slider_action ? "" : config.unit;
-  ctx->show_value = config.precision == "value";
-  ctx->page = atoi(cfg_option_value(config.options, "badge_page").c_str());
+  ctx->show_value = !ctx->unsupported && config.precision == "value";
   ctx->active_color = cfg_option_enabled(config.options, "active_color");
   const std::string decimals = cfg_option_value(config.options, "badge_decimals");
   ctx->decimals = decimals == "0" ? 0 : decimals == "2" ? 2 : 1;
 
-  if (ctx->action == "slider") {
+  if (ctx->slider_action) {
     ctx->slider = lv_slider_create(slot.btn);
     lv_obj_remove_style_all(ctx->slider);
     lv_obj_set_size(ctx->slider, LV_PCT(100), LV_PCT(100));
@@ -336,7 +335,7 @@ inline bool badge_driver_bind_data(BtnSlot &slot, const ParsedCfg &, const Conte
   if (!badge_driver_matches(context)) return false;
   BadgeCtx *ctx = badge_context(slot.btn);
   if (!ctx) return true;
-  if (ctx->card_mode) return true;
+  if (ctx->card_mode || ctx->unsupported) return true;
   // Rebinding after a layout refresh must not duplicate callbacks or retain
   // subscriptions to widgets from an earlier grid.
   ha_release_callbacks_for_owner(ctx->content);
@@ -417,6 +416,7 @@ inline bool badge_driver_bind_subpage(BtnSlot &slot, const ParsedCfg &config, co
                                     const std::function<void(const std::string &)> &add_parent_indicator) {
   if (!badge_driver_bind_data(slot, config, context)) return false;
   BadgeCtx *ctx = badge_context(slot.btn);
+  if (ctx && ctx->unsupported) return true;
   if (ctx && !ctx->target.empty() && (ctx->action == "toggle" || ctx->action == "slider") && add_parent_indicator) {
     add_parent_indicator(ctx->target);
   }

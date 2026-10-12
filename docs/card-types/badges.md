@@ -6,7 +6,7 @@ description: Compact icon-and-label or live-value controls for EspControl.
 # Badge
 
 A Badge shows one icon beside a label or live value in a rounded pill. Use it
-for a room shortcut, temperature reading, light switch, or compact slider.
+for a temperature reading, light switch, or compact slider.
 Each page has its own optional, short badge row above the existing card grid.
 Badges have a separate list and do not occupy card slots. Adding a row reduces
 the height of the grid while keeping its columns, card count and positions.
@@ -17,8 +17,8 @@ The row stays one badge high; swipe horizontally if the badges do not all fit.
 1. Open the home screen or subpage in the web editor and click the **+** at the
    end of the badge row. Use **Show badges** if the row is hidden. Each page
    supports up to eight badges.
-2. Choose a type from the same picker used for cards. Availability follows
-   your panel's supported card types.
+2. Choose a type from the card-based picker. Availability follows your
+   panel's supported card types, with Subpage excluded.
 3. Configure the entity and controls as you would for that card. For example,
    Light and Fan badges offer their existing control modes and modal settings.
    **Badge Settings** contains the icon and other settings for that type.
@@ -26,10 +26,7 @@ The row stays one badge high; swipe horizontally if the badges do not all fit.
    label or status setting. Choose **Label** to keep the badge's name visible,
    or **Live value** for types with a reading. Changing this choice does not
    change the card's control mode or modal settings.
-4. For a Subpage badge, enter a label and choose **Edit Subpage** to open its
-   own card grid immediately. This saves the badge and its unique page together.
-   **Save** also creates the page, ready to open from the badge later.
-5. Sliders show whole numbers, using the entity's unit automatically or a
+4. Sliders show whole numbers, using the entity's unit automatically or a
    percentage for brightness and fan speed. Their Home Assistant range and
    step still determine the values sent to the entity.
 
@@ -43,7 +40,7 @@ editor so you can add badges again.
 Use **Ctrl-click** or **Cmd-click** to add or remove badges from the selection,
 or **Shift-click** to select a range. Choose **Edit** to change the selected
 badges together. Only fields you change are applied; mixed values, entities
-and each badge's unique subpage link stay intact when left untouched. Selecting
+and stored settings stay intact when left untouched. Selecting
 badges of the same type and mode also lets you edit their Home Assistant Entity together. Local
 sensors and local actions keep their individual sources. The context
 menu's copy, duplicate, cut and delete actions apply to the whole selection.
@@ -54,7 +51,7 @@ Badge rows require firmware that supports them. They are included in exported
 configuration backups; update older panels before restoring a backup that
 contains rows.
 
-Badges support the same types and modes as cards: switches, actions, lights,
+Badges support the same types and modes as cards except Subpage: switches, actions, lights,
 fans, climate, media, sensors, presence, doors and windows, covers, locks,
 garage doors, gates, alarms, vacuum cleaners, lawn mowers, timers, selectors,
 numeric sliders, dates, times, weather, images, Wi-Fi QR codes, webhooks,
@@ -72,15 +69,11 @@ The compact surface shows an icon beside the card's label or reading:
 | Lock, garage, gate, alarm, vacuum, lawn mower, timer | Card status or configured label; tap uses the card's action, confirmation or modal. |
 | Calendar, clock, timezone, weather | Date, time or weather content follows the chosen card mode. |
 | Image, Wi-Fi QR, screen lock | Compact icon and label; tap uses the card's normal viewer or controls. |
-| Subpage | Label and a link to its own editable page of cards. |
 
-A Subpage badge owns a unique page. Its **Edit Subpage** button uses the same
-card-grid editor as a Subpage card. Reopening or renaming the badge preserves
-its destination and page contents. Existing badge links to ordinary card
-subpages remain supported. Duplicating or pasting a Subpage badge creates a
-separate copy of its page, including its cards and nested badge rows. Cutting
-keeps those contents for pasting. Deleting a badge removes its unused private
-pages, while pages still linked elsewhere remain available.
+Subpage badges are unavailable for now. Existing ones appear inactive and can
+be removed from the row. Their saved page configuration remains in backups,
+and removing the badge does not delete its page or cards. Ordinary Subpage
+cards still work, and their pages can still contain badge rows.
 
 The additional **Modal** type retains the option to open an existing control
 card on the panel, including cards inside a subpage. Badges created with the

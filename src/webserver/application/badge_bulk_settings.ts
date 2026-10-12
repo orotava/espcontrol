@@ -1,6 +1,6 @@
 import type { CardConfig } from "../contracts/types";
 import { cloneCardConfig } from "../model/card";
-import { badgeAction, badgeSubtype, normalizeBadgeConfig } from "../model/badge";
+import { badgeAction, badgeSubtype, isSubpageBadge, normalizeBadgeConfig } from "../model/badge";
 import { badgeCardType, badgeToCard } from "../model/badge_card";
 import { badgeCardDisplay, badgeCardSupportsValue } from "../model/badge_card_display";
 import { cardContractDomains, cardContractCard } from "../generated/card_contract";
@@ -29,7 +29,7 @@ export function renderBadgeBulkSettings(panel: HTMLElement, sources: CardConfig[
   const commonOption = (key: string) => same(sources.map(source => configOptionValue(source.options, key)));
   const subtype = same(sources.map(badgeSubtype));
   const cardType = same(sources.map(badgeCardType));
-  const editableDisplay = sources.every(source => badgeCardType(source) === null && !["sensor", "button"].includes(badgeSubtype(source)));
+  const editableDisplay = sources.every(source => !isSubpageBadge(source) && badgeCardType(source) === null && !["sensor", "button"].includes(badgeSubtype(source)));
   const validators: Array<() => string | null> = [];
   function field(label: string, suffix: string) {
     const wrapper = document.createElement("div");
@@ -104,7 +104,7 @@ export function renderBadgeBulkSettings(panel: HTMLElement, sources: CardConfig[
     });
     if (subtype !== "sensor" && subtype !== "slider") text("Display Entity", "sensor");
   }
-  if (sources.every(source => badgeCardType(source) !== null)) {
+  if (sources.every(source => !isSubpageBadge(source) && badgeCardType(source) !== null)) {
     const choices: Array<[string, string]> = [["card", "Card display"], ["label", "Label"]];
     if (sources.every(source => badgeCardSupportsValue(badgeToCard(source))) || same(sources.map(badgeCardDisplay)) === "value") choices.push(["value", "Live value"]);
     select("Badge Display", "badge-display", same(sources.map(badgeCardDisplay)), choices, value => {
@@ -112,7 +112,7 @@ export function renderBadgeBulkSettings(panel: HTMLElement, sources: CardConfig[
       else optionEdits.set("badge_display", value === "card" ? "" : value);
     });
   }
-  if (sources.every(source => badgeCardType(source) === null && !["button", "slider"].includes(badgeSubtype(source)))) {
+  if (sources.every(source => !isSubpageBadge(source) && badgeCardType(source) === null && !["button", "slider"].includes(badgeSubtype(source)))) {
     text("Unit (optional)", "unit");
     const { wrapper, id } = field("Attribute (optional)", "attribute");
     const attribute = commonOption("badge_attribute");
@@ -123,8 +123,8 @@ export function renderBadgeBulkSettings(panel: HTMLElement, sources: CardConfig[
       if (value === "__keep") optionEdits.delete("badge_decimals"); else optionEdits.set("badge_decimals", value);
     });
   }
-  if (sources.every(source => badgeCardType(source) === null ? badgeSubtype(source) !== "button"
-    : cardContractCard(badgeCardType(source))?.options?.some(option => option.name === "active_color"))) {
+  if (sources.every(source => !isSubpageBadge(source) && (badgeCardType(source) === null ? badgeSubtype(source) !== "button"
+    : cardContractCard(badgeCardType(source))?.options?.some(option => option.name === "active_color")))) {
     const active = same(sources.map(source => configOptionEnabled(source.options, "active_color")));
     const toggle = fields.toggleRow(active === undefined ? "Lit When Active (multiple values)" : "Lit When Active", "sp-badge-bulk-active", active === true);
     toggle.input.indeterminate = active === undefined;

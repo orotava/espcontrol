@@ -194,7 +194,7 @@
             "card"
           ],
           "defaultValue": "display",
-          "omitDefault": true
+          "omitDefault": true, "hidden": true, "docsHidden": true
         },
         {
           "name": "badge_card_type",
@@ -216,7 +216,7 @@
           "name": "badge_page",
           "label": "Subpage",
           "kind": "text",
-          "omitDefault": true
+          "omitDefault": true, "hidden": true, "docsHidden": true
         },
         {
           "name": "badge_attribute",

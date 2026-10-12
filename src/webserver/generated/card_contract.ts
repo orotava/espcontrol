@@ -199,7 +199,9 @@ export const CARD_CONTRACT_CARDS: Readonly<Record<string, CardTypeSpec>> = {
           "card"
         ],
         "defaultValue": "display",
-        "omitDefault": true
+        "omitDefault": true,
+        "hidden": true,
+        "docsHidden": true
       },
       {
         "name": "badge_card_type",
@@ -225,7 +227,9 @@ export const CARD_CONTRACT_CARDS: Readonly<Record<string, CardTypeSpec>> = {
         "name": "badge_page",
         "label": "Subpage",
         "kind": "text",
-        "omitDefault": true
+        "omitDefault": true,
+        "hidden": true,
+        "docsHidden": true
       },
       {
         "name": "badge_attribute",

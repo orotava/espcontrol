@@ -84,6 +84,7 @@ export function createWebStyles(dragAnimation: boolean): string {
         ".sp-badge-row .sp-btn{flex:none;margin-left:calc(var(--btn-label)*.6)}" +
         ".sp-badge-row .sp-btn.sp-badge-card{min-width:calc(var(--btn-label)*5.4);padding:0 calc(var(--btn-label)*1.08) 0 calc(var(--btn-label)*.78)}" +
         ".sp-badge-row .sp-badge-card{cursor:grab;user-select:none}.sp-badge-row .sp-badge-card.sp-dragging{opacity:.4}" +
+        ".sp-badge-card.sp-badge-unavailable .sp-badge-content{opacity:.45}" +
         ".sp-badge-insertion-marker{position:absolute;top:10%;height:80%;width:3px;border-radius:2px;background:var(--accent);transform:translateX(-50%);pointer-events:none;z-index:3}.sp-badge-insertion-marker[hidden]{display:none}" +
         ".sp-badge-row .sp-badge-add{align-self:center;height:calc(var(--btn-label)*2.4);min-height:0;width:calc(var(--btn-label)*2.4);min-width:calc(var(--btn-label)*2.4);max-width:calc(var(--btn-label)*2.4);padding:0;border:1px dashed var(--preview-border);border-radius:999px;background:transparent!important;display:flex;align-items:center;justify-content:center;transition:border-color .2s,background-color .2s}" +
         ".sp-badge-row .sp-badge-add:hover:not(:disabled){border-color:var(--accent-hover);background:var(--accent-soft)!important}" +

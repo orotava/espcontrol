@@ -632,7 +632,7 @@ function composeApplicationContext(): ApplicationContext {
   });
   badgeRows = createBadgeRowFeature({
     document: dom.document, runtime, cards, native: nativePanelConfig,
-    deviceProfile: layout.deviceId, layout,
+    deviceProfile: layout.deviceId,
     codec: configurationCodec,
     fields, iconPicker, entities: entityState, shell,
     contextMenu: { showBadge: (event, actions) => contextMenu.showBadge(event, actions) },

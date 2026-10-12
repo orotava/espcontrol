@@ -12,7 +12,7 @@ function badge(options) {
   return { entity: "climate.kitchen", sensor: "sensor.kitchen", label: "Kitchen", icon: "Home", icon_on: "Auto", type: "badge", precision: "value", unit: "°C", options };
 }
 
-test("badge retains independent display and action targets and a stable page link", () => {
+test("old subpage badge data remains intact for future compatibility", () => {
   const button = badge("badge_action=subpage,badge_page=6,card_off_color=112233");
   normalizeBadgeConfig(button);
   assert.equal(button.sensor, "sensor.kitchen");
@@ -24,7 +24,7 @@ test("badge retains independent display and action targets and a stable page lin
 });
 
 test("badge subtypes select the correct behaviour without a Label type", () => {
-  assert.deepEqual(BADGE_SUBTYPES.map(type => type.key), ["sensor", "subpage", "switch", "button", "slider", "modal"]);
+  assert.deepEqual(BADGE_SUBTYPES.map(type => type.key), ["sensor", "switch", "button", "slider", "modal"]);
   for (const type of BADGE_SUBTYPES) {
     const button = badge("");
     setBadgeSubtype(button, type.key);
@@ -43,14 +43,14 @@ test("badge subtypes select the correct behaviour without a Label type", () => {
   assert(!momentary.options.includes("active_color"), "Momentary buttons do not retain switch colouring");
 });
 
-test("badge keeps panel-wide page destinations, drops invalid ones, and falls back for unknown actions", () => {
+test("inactive subpage destinations remain stored and unknown actions fall back safely", () => {
   const highestPage = badge("badge_action=subpage,badge_page=32");
   normalizeBadgeConfig(highestPage);
   assert.equal(configOptionValue(highestPage.options, "badge_page"), "32");
   for (const page of ["0", "33", "-1", "6oops", "6.1"]) {
     const button = badge("badge_action=subpage,badge_page=" + page);
     normalizeBadgeConfig(button);
-    assert.equal(configOptionValue(button.options, "badge_page"), "");
+    assert.equal(configOptionValue(button.options, "badge_page"), page);
   }
   const button = badge("badge_action=erase,badge_page=6,unknown=anything");
   normalizeBadgeConfig(button);
@@ -132,7 +132,7 @@ test("deleting or replacing a subpage clears its row in the same save while rena
   assert.deepEqual(cleared, [1]);
 });
 
-test("every card type survives conversion to a badge and the saved row", () => {
+test("card configurations survive badge conversion, including dormant Subpage data", () => {
   const { badgeCardType, badgeToCard, updateBadgeFromCard } = loadTypescriptTest("src/webserver/model/badge_card.ts");
   const { cardContractCardKeys, cardContractDefaultConfig } = loadTypescriptTest("src/webserver/generated/card_contract.ts");
   for (const type of cardContractCardKeys().filter(type => type !== "badge")) {
@@ -166,7 +166,7 @@ test("card badge mode changes preserve the new settings and remove stale navigat
   for (const page of ["0", "33", "12oops", "12.1"]) {
     const invalid = badge("badge_card_type=subpage,badge_page=" + page);
     normalizeBadgeConfig(invalid);
-    assert.equal(configOptionValue(invalid.options, "badge_page"), "");
+    assert.equal(configOptionValue(invalid.options, "badge_page"), page);
   }
   const linked = badge("badge_card_type=subpage,badge_page=12");
   linked.label = "Renamed";

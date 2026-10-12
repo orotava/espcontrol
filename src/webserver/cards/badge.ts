@@ -1,7 +1,7 @@
 import type { CardRegistry, CardUiServices } from "../application/card_registry";
 import { cardContractDefaultConfig, cardContractCardLabel } from "../generated/card_contract";
 import { configOptionEnabled, configOptionValue, setConfigOptionValue } from "../model/config_primitives";
-import { badgeAction, badgeSubtype, normalizeBadgeConfig } from "../model/badge";
+import { badgeAction, badgeSubtype, isSubpageBadge, normalizeBadgeConfig } from "../model/badge";
 import { iconSlug } from "../application/ui_primitives";
 import { badgeCardType, badgeToCard, cardBadgeUsesSlider } from "../model/badge_card";
 import { badgeCardDisplay, badgeCardContent } from "../model/badge_card_display";
@@ -73,14 +73,6 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
         if (domains.length) helpers.requireEntityDomain(input, domains, "Choose a supported entity for this interaction.");
       }
       if (subtype !== "sensor" && button.precision !== "value") text("Label", "label", "e.g. Kitchen");
-      if (action === "subpage") {
-        if (helpers.badgeSubpageSettings) helpers.badgeSubpageSettings(panel, button);
-        else {
-          const current = configOptionValue(button.options, "badge_page");
-          const picker = select("Subpage", "badge-page", current, [[current, current ? "Existing page " + current : "No page"]], value => option("badge_page", value));
-          helpers.markCardPrimaryField(picker.parentElement, "entity");
-        }
-      }
       helpers.renderCardIconPicker(panel, button, helpers, { field: "icon", fallback: "Auto", label: "Icon" });
       if (subtype !== "sensor" && subtype !== "button") {
         select("Display", "badge-display", button.precision || "label", [["label", "Label"], ["value", "Live value"]], value => {
@@ -110,6 +102,10 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
       }
     },
     renderPreview(button, helpers) {
+      if (isSubpageBadge(button)) {
+        return { buttonClass: "sp-badge-card sp-badge-unavailable", iconHtml:
+          '<span class="sp-badge-content"><span class="mdi mdi-' + iconSlug(button.icon === "Auto" ? "Home" : button.icon) + '"></span><span class="sp-badge-text">' + helpers.escHtml(button.label || "Badge") + '</span></span>', labelHtml: "" };
+      }
       if (badgeCardType(button) !== null) {
         const card = badgeToCard(button);
         const definition = registry.definitions[card.type];

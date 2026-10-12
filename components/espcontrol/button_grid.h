@@ -67,5 +67,3 @@
 #include "button_grid_badge_card_runtime.h"
 
 #include "button_grid_remote_modal.h"
-
-#include "button_grid_badge_navigation.h"

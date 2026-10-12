@@ -1,18 +1,6 @@
 #pragma once
 #include "badge_row_config.h"
 
-inline std::array<bool, 33> badge_subpage_destinations() {
-  std::array<bool, 33> destinations{};
-  for (int page = 0; page <= 32; ++page) {
-    for (const auto &badge : parse_subpage_config(espcontrol::badge::configuration().page(page))) {
-      if (badge.type != "badge" || cfg_option_value(badge.options, "badge_action") != "subpage") continue;
-      const int target = atoi(cfg_option_value(badge.options, "badge_page").c_str());
-      if (target > 0 && target <= 32) destinations[target] = true;
-    }
-  }
-  return destinations;
-}
-
 inline void badge_row_remove(lv_obj_t *page) {
   for (const auto &entry : page_badge_rows()) {
     if (entry.page != page) continue;

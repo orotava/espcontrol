@@ -25,3 +25,17 @@ test("badge display choices survive save and mode changes independently of nativ
   assert.deepEqual(badgeToCard(restored), changed);
   assert.equal(badgeCardDisplay({ options: "badge_display=invalid" }), "card");
 });
+
+test("removed Subpage badges remain readable without losing dormant configuration", () => {
+  const { BADGE_SUBTYPES, isSubpageBadge, normalizeBadgeConfig } = load("src/webserver/model/badge.ts");
+  assert(!BADGE_SUBTYPES.some(type => type.key === "subpage"));
+  for (const options of ["badge_action=subpage,badge_page=12", "badge_action=card,badge_card_type=subpage,badge_page=12,badge_display=label"]) {
+    const original = { entity: "", label: "Stored room", icon: "Home", icon_on: "Auto", type: "badge", sensor: "", precision: "label", unit: "", options };
+    const badge = { ...original };
+    assert(isSubpageBadge(badge));
+    normalizeBadgeConfig(badge);
+    assert.deepEqual(badge, original);
+    assert.deepEqual(parseBadgeRow(serializeBadgeRow([badge]))[0], original);
+  }
+  assert(!isSubpageBadge({ options: "badge_action=card,badge_card_type=media" }));
+});

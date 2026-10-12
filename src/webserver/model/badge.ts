@@ -7,13 +7,18 @@ export type BadgeAction = typeof BADGE_ACTIONS[number];
 
 export const BADGE_SUBTYPES = [
   { key: "sensor", label: "Sensor", icon: "thermometer", defaultIcon: "Thermometer", description: "Show an entity's live reading." },
-  { key: "subpage", label: "Subpage", icon: "view-grid-plus", defaultIcon: "Home", description: "Open another page." },
   { key: "switch", label: "Switch", icon: "toggle-switch", defaultIcon: "Lightbulb", description: "Toggle a light, switch or fan." },
   { key: "button", label: "Button", icon: "gesture-tap", defaultIcon: "Gesture Tap", description: "Press a Home Assistant button." },
   { key: "slider", label: "Slider", icon: "volume-high", defaultIcon: "Volume High", description: "Adjust brightness, volume or a number." },
   { key: "modal", label: "Modal", icon: "card-outline", defaultIcon: "Home", description: "Open an existing control modal." },
 ] as const;
-export type BadgeSubtype = typeof BADGE_SUBTYPES[number]["key"] | "card";
+// Retain old Subpage configurations for backup compatibility, without offering the type.
+export type BadgeSubtype = typeof BADGE_SUBTYPES[number]["key"] | "card" | "subpage";
+
+export function isSubpageBadge(button: Partial<CardConfig>): boolean {
+  return configOptionValue(button.options || "", "badge_action") === "subpage" ||
+    configOptionValue(button.options || "", "badge_card_type") === "subpage";
+}
 
 export function badgeSubtype(button: Partial<CardConfig>): BadgeSubtype {
   const action = badgeAction(button);
@@ -35,25 +40,19 @@ export function badgeAction(button: Partial<CardConfig>): BadgeAction {
 }
 
 export function normalizeBadgeConfig(button: CardConfig): void {
+  if (isSubpageBadge(button)) return;
   const cardType = badgeCardType(button);
   if (cardType !== null) {
     button.type = "badge";
-    button.options = setConfigOptionValue(button.options, "badge_action", cardType === "subpage" ? "subpage" : "card");
+    button.options = setConfigOptionValue(button.options, "badge_action", "card");
     const display = configOptionValue(button.options, "badge_display");
     if (display !== "label" && display !== "value") button.options = setConfigOptionValue(button.options, "badge_display", "");
-    const page = configOptionValue(button.options, "badge_page");
-    if (cardType !== "subpage" || !/^[1-9]\d?$/.test(page) || Number(page) > 32) {
-      button.options = setConfigOptionValue(button.options, "badge_page", "");
-    }
+    button.options = setConfigOptionValue(button.options, "badge_page", "");
     return;
   }
   const source = button.options || "";
   const action = badgeAction(button);
   let options = action === "display" ? "" : setConfigOptionValue("", "badge_action", action);
-  if (action === "subpage") {
-    const page = configOptionValue(source, "badge_page");
-    if (/^[1-9]\d?$/.test(page) && Number(page) <= 32) options = setConfigOptionValue(options, "badge_page", page);
-  }
   for (const key of action === "slider" ? [] : ["badge_attribute", "badge_decimals"]) {
     const value = configOptionValue(source, key).trim();
     if (key === "badge_attribute" ? !!value : value === "0" || value === "2") {

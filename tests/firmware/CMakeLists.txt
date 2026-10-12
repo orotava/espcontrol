@@ -622,11 +622,7 @@ target_include_directories(badge_policy_test PRIVATE ../../components/espcontrol
 add_test(NAME badge_policy_test COMMAND badge_policy_test)
 add_test(NAME badge_card_display_test COMMAND ${Python3_EXECUTABLE}
   ${CMAKE_CURRENT_SOURCE_DIR}/badge_card_display_test.py ${CMAKE_CXX_COMPILER})
-add_executable(badge_navigation_test badge_navigation_test.cpp)
-target_include_directories(badge_navigation_test PRIVATE ../../components/espcontrol)
-add_test(NAME badge_navigation_test COMMAND badge_navigation_test)
-
-foreach(badge_target badge_policy_test badge_navigation_test)
+foreach(badge_target badge_policy_test)
   target_compile_features(${badge_target} PRIVATE cxx_std_17)
   target_compile_options(${badge_target} PRIVATE -Wall -Wextra -Werror -UNDEBUG)
 endforeach()
