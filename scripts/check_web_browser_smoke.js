@@ -6459,7 +6459,7 @@ async function assertBadgeJourney(browser, testCase) {
       return { width: bounds.width, height: bounds.height, textHeight: text.getBoundingClientRect().height,
         aligned: Math.abs(text.getBoundingClientRect().top - icon.getBoundingClientRect().top) < bounds.height / 2,
         overflowing: text.scrollWidth > text.clientWidth,
-        aboveGrid: bounds.bottom <= gridTop, gridGap: gridTop - rowBottom, expectedGridGap: labelSize * .8 };
+        aboveGrid: bounds.bottom <= gridTop, gridGap: gridTop - rowBottom, expectedGridGap: labelSize * 1.2 };
     });
     assert(geometry.height < geometry.width && geometry.height > geometry.textHeight, "Badge is a compact horizontal pill with visible text");
     assert(geometry.aligned && !geometry.overflowing, "Badge icon and value fit side by side");
@@ -6472,7 +6472,7 @@ async function assertBadgeJourney(browser, testCase) {
     assert(longBadge.whiteSpace === "nowrap" && longBadge.scrollWidth <= longBadge.clientWidth + 1,
       "Long badge labels expand their pill instead of wrapping or clipping");
     assert(geometry.aboveGrid, "The short row sits above the full card grid");
-    assert(Math.abs(geometry.gridGap - geometry.expectedGridGap) < 2, "The gap below badges matches the device row spacing");
+    assert(Math.abs(geometry.gridGap - geometry.expectedGridGap) < 2, "The web preview leaves extra space between badges and cards");
     const typography = await page.locator(".sp-badge-text").first().evaluate(text => {
       const badge = getComputedStyle(text);
       const label = getComputedStyle(document.querySelector(".sp-main .sp-btn-label"));

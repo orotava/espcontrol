@@ -78,7 +78,7 @@ export function createWebStyles(dragAnimation: boolean): string {
         ".sp-main{position:absolute;top:var(--grid-top);left:var(--grid-left);right:var(--grid-right);bottom:var(--grid-bottom);" +
         "display:grid;grid-template-columns:var(--grid-cols);grid-template-rows:var(--grid-rows);gap:var(--grid-gap);overflow:hidden}" +
         ".sp-main.sp-grid-loading{visibility:hidden;opacity:0;pointer-events:none;transition:opacity .2s,visibility .2s}" +
-        ".sp-badge-row{position:absolute;top:calc(var(--grid-top) + var(--btn-label)*.4);left:var(--grid-left);right:var(--grid-right);height:calc(var(--btn-label)*2.4);display:flex;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}" +
+        ".sp-badge-row{position:absolute;top:var(--grid-top);left:var(--grid-left);right:var(--grid-right);height:calc(var(--btn-label)*2.4);display:flex;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}" +
         ".sp-badge-row-items{display:flex;flex:none;width:max-content;min-width:100%;justify-content:center;box-sizing:border-box;padding-right:calc(var(--btn-label)*.6)}" +
         ".sp-badge-row[hidden]{display:none}.sp-badge-row::-webkit-scrollbar{display:none}" +
         ".sp-badge-row .sp-btn{flex:none;margin-left:calc(var(--btn-label)*.6)}" +
