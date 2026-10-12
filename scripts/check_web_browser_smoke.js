@@ -6468,7 +6468,7 @@ async function assertBadgeJourney(browser, testCase) {
     });
     assert(typography.matching, "Badge text uses the same font and weight as card labels at a slightly smaller size");
     assert(typography.height <= typography.textSize * 2.4 + 1 && typography.iconSize <= typography.textSize * 1.2 + 1, "Badge and icon sizes match the device line-height proportions");
-    assert(typography.paddingLeft > typography.paddingRight, "Badges have extra padding on their left side");
+    assert(typography.paddingRight > typography.paddingLeft, "Badges have extra padding on their right side");
     const rowGeometry = await page.locator(".sp-badge-row").evaluate(row => {
       const bounds = row.getBoundingClientRect();
       const badges = Array.from(row.querySelectorAll(".sp-badge-row-items > .sp-btn"));
