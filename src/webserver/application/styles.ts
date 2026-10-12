@@ -55,7 +55,8 @@ export function createWebStyles(dragAnimation: boolean): string {
         ".sp-clockbar-section{height:100%;min-width:0;flex:1;display:flex;align-items:center;gap:.4cqw;position:relative}" +
         ".sp-clockbar-left{justify-content:flex-start}.sp-clockbar-middle{justify-content:center}.sp-clockbar-right{justify-content:flex-end}" +
         ".sp-clockbar-subpage-title,.sp-temp,.sp-clock{font-size:var(--btn-label);line-height:1.2;color:var(--preview-clockbar-text);font-weight:var(--btn-label-weight,400)}" +
-        ".sp-btn-label,.sp-badge-text{font-size:var(--btn-label);line-height:1.2;color:var(--card-text-color,var(--preview-text-primary));font-weight:var(--btn-label-weight,400)}" +
+        ".sp-btn-label{font-size:var(--btn-label);line-height:1.2;color:var(--card-text-color,var(--preview-text-primary));font-weight:var(--btn-label-weight,400)}" +
+        ".sp-badge-text{font-size:calc(var(--btn-label)*.9);line-height:1.2;color:var(--card-text-color,var(--preview-text-primary));font-weight:var(--btn-label-weight,400)}" +
         ".sp-clockbar-subpage-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}" +
         ".sp-clockbar-item{height:min(36px,calc(100% - .45cqw));min-height:0;min-width:28px;border:1px solid transparent;border-radius:calc(var(--topbar-fs)*.3);" +
         "background:transparent;color:var(--preview-clockbar-text);display:flex;align-items:center;justify-content:center;padding:0 calc(var(--topbar-fs)*.28);" +
