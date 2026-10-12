@@ -69,12 +69,6 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
           : action === "button" ? ["button", "input_button"] : [];
         const input = text("Entity", "entity", action === "button" ? "e.g. button.restart" : "e.g. light.kitchen", domains, true);
         if (domains.length) helpers.requireEntityDomain(input, domains, "Choose a supported entity for this interaction.");
-        if (action === "modal") {
-          const note = document.createElement("p");
-          note.className = "sp-hint";
-          note.textContent = "Opens the existing control modal for a card configured on this panel, including cards inside subpages.";
-          panel.appendChild(note);
-        }
       }
       if (subtype !== "sensor" && button.precision !== "value") text("Label", "label", "e.g. Kitchen");
       if (action === "subpage") {
