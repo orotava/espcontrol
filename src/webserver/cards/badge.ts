@@ -1,9 +1,10 @@
 import type { CardRegistry, CardUiServices } from "../application/card_registry";
-import { cardContractDefaultConfig } from "../generated/card_contract";
+import { cardContractDefaultConfig, cardContractCardLabel } from "../generated/card_contract";
 import { configOptionEnabled, configOptionValue, setConfigOptionValue } from "../model/config_primitives";
 import { badgeAction, badgeSubtype, normalizeBadgeConfig } from "../model/badge";
 import { iconSlug } from "../application/ui_primitives";
 import { badgeCardType, badgeToCard, cardBadgeUsesSlider } from "../model/badge_card";
+import { badgeCardDisplay, badgeCardContent } from "../model/badge_card_display";
 
 export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiServices): void {
   registry.register("badge", {
@@ -114,16 +115,22 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
         const definition = registry.definitions[card.type];
         const preview: { iconHtml?: string; labelHtml?: string } = definition?.renderPreview?.(card, {
           ...helpers, resolveIcon: (icon: string) => iconSlug(icon || "Home"), cardSize: 1,
-          cardBackgroundColor: "", cardProgressColor: "#ff8c00", cardTextColor: "#fff",
+          cardBackgroundColor: helpers.cardBackgroundColor || "", cardProgressColor: helpers.cardProgressColor || "FF8C00", cardTextColor: helpers.cardTextColor || "#fff",
         }) || {};
         const sample = document.createElement("div");
         sample.innerHTML = (preview.iconHtml || "") + (preview.labelHtml || "");
         const numeric = sample.querySelector(".sp-sensor-value");
-        const text = numeric ? (numeric.textContent || "") + (sample.querySelector(".sp-sensor-unit")?.textContent || "")
-          : sample.querySelector(".sp-media-now-title,.sp-media-cover-details-title,.sp-btn-label")?.textContent || card.label || "Badge";
+        const reading = numeric ? (numeric.textContent || "") + (sample.querySelector(".sp-sensor-unit")?.textContent || "") : "";
+        const caption = sample.querySelector(".sp-btn-label")?.textContent || card.label || cardContractCardLabel(card.type);
+        const track = sample.querySelector(".sp-media-now-title,.sp-media-cover-details-title")?.textContent || caption;
         const slider = cardBadgeUsesSlider(card);
-        const label = card.type === "light_temperature" ? "3000K" : slider && card.type !== "media"
-          ? (/^(number|input_number)\./.test(card.entity) ? "35" : "35%") : text;
+        const content = badgeCardContent(card, badgeCardDisplay(button));
+        const sliderReading = card.type === "media" ? reading || track : card.type === "light_temperature" ? "3000K"
+          : (/^(number|input_number)\./.test(card.entity) ? "35" : "35%");
+        const label = content === "label" ? card.label || cardContractCardLabel(card.type)
+          : content === "text" ? caption : content === "track" ? track
+          : content === "date" ? reading + " " + caption : content === "datetime" ? caption + " · " + reading
+          : content === "slider" ? sliderReading : reading || caption;
         const icon = sample.querySelector(".mdi")?.className.split(/\s+/).filter(name => name === "mdi" || name.startsWith("mdi-")).join(" ")
           || "mdi mdi-" + iconSlug(card.icon === "Auto" ? "Home" : card.icon);
         return { buttonClass: "sp-badge-card" + (slider ? " sp-badge-slider" : ""),

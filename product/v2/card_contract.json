@@ -205,6 +205,14 @@
           "omitDefault": true
         },
         {
+          "name": "badge_display",
+          "label": "Badge Display",
+          "kind": "choice",
+          "values": ["card", "label", "value"],
+          "defaultValue": "card",
+          "omitDefault": true
+        },
+        {
           "name": "badge_page",
           "label": "Subpage",
           "kind": "text",

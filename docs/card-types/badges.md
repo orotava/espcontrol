@@ -22,6 +22,10 @@ The row stays one badge high; swipe horizontally if the badges do not all fit.
 3. Configure the entity and controls as you would for that card. For example,
    Light and Fan badges offer their existing control modes and modal settings.
    **Badge Settings** contains the icon and other settings for that type.
+   **Badge Display** defaults to **Card display**, following the card's own
+   label or status setting. Choose **Label** to keep the badge's name visible,
+   or **Live value** for types with a reading. Changing this choice does not
+   change the card's control mode or modal settings.
 4. For a Subpage badge, enter a label and choose **Edit Subpage** to open its
    own card grid immediately. This saves the badge and its unique page together.
    **Save** also creates the page, ready to open from the badge later.
@@ -40,7 +44,8 @@ Use **Ctrl-click** or **Cmd-click** to add or remove badges from the selection,
 or **Shift-click** to select a range. Choose **Edit** to change the selected
 badges together. Only fields you change are applied; mixed values, entities
 and each badge's unique subpage link stay intact when left untouched. Selecting
-badges of the same type also lets you edit their Entity together. The context
+badges of the same type and mode also lets you edit their Home Assistant Entity together. Local
+sensors and local actions keep their individual sources. The context
 menu's copy, duplicate, cut and delete actions apply to the whole selection.
 
 Close the dialog or choose **Cancel** to discard unsaved edits.
@@ -55,12 +60,27 @@ garage doors, gates, alarms, vacuum cleaners, lawn mowers, timers, selectors,
 numeric sliders, dates, times, weather, images, Wi-Fi QR codes, webhooks,
 screen locks and panel-specific internal controls. Each badge owns its control
 settings, live state and modal; it does not need a matching card in the grid.
-The compact surface shows an icon beside the card's label or reading.
+The compact surface shows an icon beside the card's label or reading:
+
+| Type | Compact content and interaction |
+| --- | --- |
+| Switch, action, internal control, push button, webhook, selector | Card label or configured state; tap runs the same action or opens the same controls. |
+| Light, fan, climate | Card label or status; control modes open their own full-size modal. Brightness, temperature and speed modes use an inline slider. |
+| Numeric slider, cover position or tilt | Whole-number reading and the card's native range and step; drag to adjust. Cover button modes keep their own actions. |
+| Media | Playback buttons follow their configured label or status. Volume shows a percentage, now-playing and cover-art modes show the track, and seek modes use an inline slider. |
+| Sensor, local sensor, presence, door/window | Numeric readings, text or icon states follow the chosen card mode. |
+| Lock, garage, gate, alarm, vacuum, lawn mower, timer | Card status or configured label; tap uses the card's action, confirmation or modal. |
+| Calendar, clock, timezone, weather | Date, time or weather content follows the chosen card mode. |
+| Image, Wi-Fi QR, screen lock | Compact icon and label; tap uses the card's normal viewer or controls. |
+| Subpage | Label and a link to its own editable page of cards. |
 
 A Subpage badge owns a unique page. Its **Edit Subpage** button uses the same
 card-grid editor as a Subpage card. Reopening or renaming the badge preserves
 its destination and page contents. Existing badge links to ordinary card
-subpages remain supported.
+subpages remain supported. Duplicating or pasting a Subpage badge creates a
+separate copy of its page, including its cards and nested badge rows. Cutting
+keeps those contents for pasting. Deleting a badge removes its unused private
+pages, while pages still linked elsewhere remain available.
 
 The additional **Modal** type retains the option to open an existing control
 card on the panel, including cards inside a subpage. Badges created with the

@@ -1,11 +1,12 @@
 import { state } from "../state/app_instance";
 import type { CardConfig } from "../contracts/types";
-import { cardContractDefaultConfig } from "../generated/card_contract";
+import { cardContractDefaultConfig, cardContractPickerKey } from "../generated/card_contract";
 import { cloneCardConfig } from "../model/card";
 import { BADGE_SUBTYPES, badgeSubtype, setBadgeSubtype, type BadgeSubtype } from "../model/badge";
 import { badgeRowKey, badgeRowsFromSettings, MAX_ROW_BADGES, serializeBadgeRow } from "../model/badge_row";
 import { updateNativePanelConfigDocument } from "../features/native_panel_config";
-import { PREVIEW_THEME_COLORS, previewEffectiveTheme } from "../state/preview_theme";
+import { PREVIEW_THEME_COLORS, previewEffectiveTheme, defaultCardBackgroundColor } from "../state/preview_theme";
+import { WEB_UI_COLORS } from "../state/ui_tokens";
 import { escHtml, mdiIcon } from "./ui_primitives";
 import { createSettingsModal } from "../components/settings_modal";
 import type { NativePanelConfigController } from "../controllers/native_panel_config_controller";
@@ -20,10 +21,11 @@ import type { ConfigCodecFeature } from "./config_codec";
 import type { RuntimeSubpage } from "../state/types";
 import type { BadgeContextMenuActions, PreviewContextMenuFeature } from "./preview_context_menu";
 import { badgeAction } from "../model/badge";
-import { configOptionValue, setConfigOptionValue } from "../model/config_primitives";
+import { configOptionValue, setConfigOptionValue, lighterCardColor } from "../model/config_primitives";
 import { renderBadgeBulkSettings, type BadgeBulkSettings } from "./badge_bulk_settings";
-import { badgeCardType, badgeToCard, updateBadgeFromCard } from "../model/badge_card";
-import { defaultCardTypeForPicker, type CardPickerOption } from "../features/preview";
+import { badgeCardType, badgeToCard, updateBadgeFromCard, cardBadgeUsesSlider } from "../model/badge_card";
+import { badgeCardDisplay, badgeCardSupportsValue } from "../model/badge_card_display";
+import { defaultCardTypeForPicker, cardPreviewTextColor, cardProgressColor, type CardPickerOption } from "../features/preview";
 
 export interface BadgeRowFeature {
   render(): void;
@@ -59,6 +61,8 @@ export function createBadgeRowFeature(deps: {
   let selectedBadges: { page: number; indices: number[]; anchor: number } | null = null;
   let bulkDraft: { page: number; indices: number[]; settings: BadgeBulkSettings } | null = null;
   let badgeClipboard: CardConfig[] | null = null;
+  type CopiedPage = { parent: CardConfig; page: RuntimeSubpage; badges: CardConfig[] };
+  const copiedPages = new WeakMap<CardConfig, CopiedPage>();
   let saving = false;
   let badgesHidden = false;
   let draggedIndex = -1;
@@ -149,11 +153,23 @@ export function createBadgeRowFeature(deps: {
     const colors = PREVIEW_THEME_COLORS[previewEffectiveTheme(state)];
     const selection = currentSelection();
     items.forEach((config, index) => {
-      const preview = deps.cards.definitions.badge!.renderPreview!(config, { escHtml }) as { buttonClass: string; iconHtml: string };
+      const rawColor = configOptionValue(config.options, "card_off_color").replace(/^#/, "").toUpperCase();
+      const offColor = /^[0-9A-F]{6}$/.test(rawColor) ? rawColor : "";
+      const cardType = badgeCardType(config);
+      const primary = state.onColor || WEB_UI_COLORS.primary;
+      const foreground = offColor ? cardPreviewTextColor(offColor) : "#" + colors.textPrimary;
+      const preview = deps.cards.definitions.badge!.renderPreview!(config, { escHtml,
+        cardBackgroundColor: offColor, cardProgressColor: cardProgressColor(offColor) || primary, cardTextColor: foreground,
+      }) as { buttonClass: string; iconHtml: string };
       const selected = selection?.indices.includes(index);
       const item = button("", event => selectBadge(index, event), "sp-btn " + preview.buttonClass + (selected ? " sp-selected" : ""));
       item.innerHTML = preview.iconHtml;
-      item.style.backgroundColor = "#" + colors.surfaceCard;
+      item.style.backgroundColor = "#" + (offColor || (cardType !== null ? defaultCardBackgroundColor(cardType, state) : colors.surfaceCard));
+      const fill = cardType === "media" && cardBadgeUsesSlider(badgeToCard(config))
+        ? cardProgressColor(offColor) : lighterCardColor(offColor);
+      item.style.setProperty("--card-active-color", "#" + (fill || primary));
+      item.style.setProperty("--card-text-color", foreground);
+      item.style.color = foreground;
       item.setAttribute("data-badge-index", String(index));
       item.setAttribute("aria-label", "Select badge " + (config.label || index + 1));
       item.setAttribute("aria-pressed", String(!!selected));
@@ -282,14 +298,17 @@ export function createBadgeRowFeature(deps: {
   function badgeContextMenuActions(): BadgeContextMenuActions {
     const selected = currentSelection()!;
     const indices = selected.indices.slice().sort((a, b) => a - b);
-    const copied = () => indices.map(index => cloneBadgeForClipboard(badges(selected.page)[index]!));
+    const copied = () => {
+      try { return indices.map(index => cloneBadgeForClipboard(badges(selected.page)[index]!)); }
+      catch (error) { shell.showBanner((error as Error).message, "error"); return null; }
+    };
     return {
       selectionCount: indices.length,
       edit: editSelectedBadges,
       duplicate: () => duplicateBadges(indices),
-      copy: () => { badgeClipboard = copied(); },
-      copyCode: () => deps.showCopyCode(copied()),
-      cut: () => { badgeClipboard = copied(); deleteSelectedBadges(); },
+      copy: () => { const copy = copied(); if (copy) badgeClipboard = copy; },
+      copyCode: () => deps.showCopyCode(indices.map(index => cloneCardConfig(badges(selected.page)[index]!))),
+      cut: () => { const copy = copied(); if (copy) { badgeClipboard = copy; deleteSelectedBadges(); } },
       delete: deleteSelectedBadges,
       ...(badgeClipboard ? { paste: () => pasteBadge(indices[indices.length - 1]! + 1) } : {}),
     };
@@ -325,13 +344,27 @@ export function createBadgeRowFeature(deps: {
     const removed = badges(selected.page).filter((_, index) => selected.indices.includes(index));
     const next = badges(selected.page).filter((_, index) => !selected.indices.includes(index)).map(cloneCardConfig);
     selectedBadges = null;
-    const orphanPages = [...new Set(removed.map(badge => orphanBadgePage(badge, next, selected.page)).filter((slot): slot is number => slot !== null))];
+    const orphanPages = [...new Set(removed.map(badge => orphanBadgePage(badge, selected.page)).filter((slot): slot is number => slot !== null))];
     void save(next, selected.page, false, orphanPages);
   }
 
-  function cloneBadgeForClipboard(source: CardConfig): CardConfig {
+  function cloneBadgeForClipboard(source: CardConfig, ancestors: ReadonlySet<number> = new Set()): CardConfig {
     const copy = cloneCardConfig(source);
-    if (badgeAction(copy) === "subpage") copy.options = setConfigOptionValue(copy.options, "badge_page", "");
+    if (badgeAction(copy) === "subpage") {
+      const slot = Number(configOptionValue(source.options, "badge_page"));
+      const saved = copiedPages.get(source);
+      if (saved) {
+        copiedPages.set(copy, { parent: cloneCardConfig(saved.parent), page: structuredClone(saved.page),
+          badges: saved.badges.map(item => cloneBadgeForClipboard(item, ancestors)) });
+      } else if (slot > 0 && state.buttons[slot - 1]?.type === "subpage") {
+        if (ancestors.has(slot)) throw new Error("This page links back to itself. Remove the circular badge link before copying it.");
+        const path = new Set([...ancestors, slot]);
+        copiedPages.set(copy, { parent: cloneCardConfig(state.buttons[slot - 1]!),
+          page: structuredClone(state.subpages[String(slot)] || { order: [], buttons: [], grid: [], sizes: {}, backLabel: "Back" }),
+          badges: badges(slot).map(item => cloneBadgeForClipboard(item, path)) });
+      }
+      copy.options = setConfigOptionValue(copy.options, "badge_page", "");
+    }
     return copy;
   }
 
@@ -343,7 +376,8 @@ export function createBadgeRowFeature(deps: {
       return;
     }
     const insertion = indices[indices.length - 1]! + 1;
-    next.splice(insertion, 0, ...indices.map(index => cloneCardConfig(next[index]!)));
+    try { next.splice(insertion, 0, ...indices.map(index => cloneBadgeForClipboard(next[index]!))); }
+    catch (error) { shell.showBanner((error as Error).message, "error"); return; }
     selectedBadges = { page, indices: indices.map((_, offset) => insertion + offset), anchor: insertion };
     void save(next, page, false);
   }
@@ -357,20 +391,38 @@ export function createBadgeRowFeature(deps: {
       return;
     }
     const destination = Math.max(0, Math.min(index, next.length));
-    next.splice(destination, 0, ...badgeClipboard.map(cloneCardConfig));
+    next.splice(destination, 0, ...badgeClipboard.map(item => cloneBadgeForClipboard(item)));
     selectedBadges = { page, indices: badgeClipboard.map((_, offset) => destination + offset), anchor: destination };
     void save(next, page, false);
   }
 
-  function orphanBadgePage(removed: CardConfig, nextRow: CardConfig[], page: number) {
+  function orphanBadgePage(removed: CardConfig, page: number) {
     if (badgeAction(removed) !== "subpage") return null;
     const target = Number(configOptionValue(removed.options, "badge_page"));
     if (!target || target === page || state.grid.includes(target)) return null;
-    for (const [rowPage, row] of Object.entries(state.badgeRows)) {
-      const badgesToCheck = Number(rowPage) === page ? nextRow : row;
-      if (badgesToCheck.some(item => badgeAction(item) === "subpage" && Number(configOptionValue(item.options, "badge_page")) === target)) return null;
-    }
     return target;
+  }
+
+  function unusedBadgePages(roots: number[], page: number, next: CardConfig[]): number[] {
+    const candidates = new Set<number>();
+    const visit = (slot: number) => {
+      if (!slot || slot === page || state.grid.includes(slot) || candidates.has(slot)) return;
+      if (state.buttons[slot - 1]?.type !== "subpage") return;
+      candidates.add(slot);
+      for (const item of badges(slot)) if (badgeAction(item) === "subpage") visit(Number(configOptionValue(item.options, "badge_page")));
+    };
+    roots.forEach(visit);
+    let changed: boolean;
+    do {
+      changed = false;
+      for (const [rowPage, row] of Object.entries(state.badgeRows)) {
+        if (candidates.has(Number(rowPage))) continue;
+        for (const item of Number(rowPage) === page ? next : row) {
+          if (badgeAction(item) === "subpage" && candidates.delete(Number(configOptionValue(item.options, "badge_page")))) changed = true;
+        }
+      }
+    } while (changed);
+    return [...candidates];
   }
 
   function renderSelectionControl(container: HTMLElement) {
@@ -379,7 +431,7 @@ export function createBadgeRowFeature(deps: {
     const control = button(badgesHidden ? "Show badges" : "Hide badges", () => {
       badgesHidden = !badgesHidden;
       deps.renderPreview();
-    }, "sp-selection-btn", badgesHidden ? "eye" : "eye-off", badgesHidden ? "Show badges" : "Hide badges");
+    }, "sp-selection-btn", badgesHidden ? "eye-outline" : "eye-off-outline", badgesHidden ? "Show badges" : "Hide badges");
     control.disabled = !state.badgeRowsReady || shell.isConfigLocked();
     container.appendChild(control);
   }
@@ -461,34 +513,42 @@ export function createBadgeRowFeature(deps: {
 
   async function save(next: CardConfig[], page: number, closeEditor: boolean, removePageSlots: number[] = []) {
     if (saving || shell.isConfigLocked()) return false;
-    const pageChanges = new Map<number, { parent: CardConfig; page?: RuntimeSubpage; value?: string }>();
-    for (const badge of next) {
-      if (badgeAction(badge) !== "subpage") continue;
-      let target = Number(configOptionValue(badge.options, "badge_page"));
-      const existing = target > 0 && state.buttons[target - 1]?.type === "subpage";
-      if (!existing && !pageChanges.has(target)) {
-        target = firstFreeBadgePageSlot(new Set(pageChanges.keys()));
-        if (target < 0) {
-          shell.showBanner("There are no unused slots for a new badge page. Free a card slot and try again.", "error");
-          return false;
-        }
-        badge.options = setConfigOptionValue(badge.options, "badge_page", String(target));
-      }
-      if (state.grid.includes(target)) continue;
-      const parent = badgeCardType(badge) === "subpage" ? badgeToCard(badge) : cardContractDefaultConfig("subpage");
-      parent.label = badge.label || "Subpage";
-      parent.icon = badge.icon;
-      const changed: { parent: CardConfig; page?: RuntimeSubpage; value?: string } = { ...pageChanges.get(target), parent };
-      if (!existing && !pageChanges.has(target)) {
-        changed.page = { order: [], buttons: [], grid: [], sizes: {}, backLabel: "Back" };
-        deps.codec.buildSubpageGrid(changed.page);
-        changed.value = deps.codec.serializeSubpageConfig(changed.page);
-      }
-      pageChanges.set(target, changed);
-    }
+    removePageSlots = unusedBadgePages(removePageSlots, page, next);
+    const pageChanges = new Map<number, { parent: CardConfig; page?: RuntimeSubpage; value?: string; badges?: CardConfig[] }>();
     let value: string;
-    try { value = serializeBadgeRow(next); }
-    catch (error) { shell.showBanner((error as Error).message, "error"); return false; }
+    try {
+      const prepared = new WeakSet<CardConfig>();
+      const preparePage = (badge: CardConfig) => {
+        if (badgeAction(badge) !== "subpage" || prepared.has(badge)) return;
+        prepared.add(badge);
+        let target = Number(configOptionValue(badge.options, "badge_page"));
+        const existing = target > 0 && state.buttons[target - 1]?.type === "subpage";
+        if (!existing) {
+          target = firstFreeBadgePageSlot(new Set(pageChanges.keys()));
+          if (target < 0) throw new Error("There are no unused slots for a new badge page. Free a card slot and try again.");
+          badge.options = setConfigOptionValue(badge.options, "badge_page", String(target));
+        }
+        if (state.grid.includes(target)) return;
+        const copied = copiedPages.get(badge);
+        const parent = badgeCardType(badge) === "subpage" ? badgeToCard(badge)
+          : copied ? cloneCardConfig(copied.parent) : cardContractDefaultConfig("subpage");
+        parent.label = badge.label || "Subpage";
+        parent.icon = badge.icon;
+        const changed = { ...pageChanges.get(target), parent };
+        if (!existing && !pageChanges.has(target)) {
+          changed.page = copied ? structuredClone(copied.page) : { order: [], buttons: [], grid: [], sizes: {}, backLabel: "Back" };
+          deps.codec.buildSubpageGrid(changed.page);
+          changed.value = deps.codec.serializeSubpageConfig(changed.page);
+          changed.badges = copied ? copied.badges.map(item => cloneBadgeForClipboard(item)) : [];
+        }
+        pageChanges.set(target, changed);
+        changed.badges?.forEach(preparePage);
+      };
+      next.forEach(preparePage);
+      value = serializeBadgeRow(next);
+      // Validate all copied rows before scheduling the atomic write.
+      for (const change of pageChanges.values()) if (change.badges) serializeBadgeRow(change.badges);
+    } catch (error) { shell.showBanner((error as Error).message, "error"); return false; }
     saving = true;
     if (closeEditor) {
       modal?.setAttribute("aria-busy", "true");
@@ -499,6 +559,7 @@ export function createBadgeRowFeature(deps: {
       for (const [slot, change] of pageChanges) {
         updated = updateNativePanelConfigDocument(updated, deps.deviceProfile, "buttons", slot, deps.codec.serializeButtonConfig(change.parent));
         if (change.value !== undefined) updated = updateNativePanelConfigDocument(updated, deps.deviceProfile, "subpages", slot, change.value);
+        if (change.badges) updated = updateNativePanelConfigDocument(updated, deps.deviceProfile, "settings", badgeRowKey(slot), serializeBadgeRow(change.badges));
       }
       for (const removePageSlot of removePageSlots) {
         updated = updateNativePanelConfigDocument(updated, deps.deviceProfile, "buttons", removePageSlot, "");
@@ -519,6 +580,7 @@ export function createBadgeRowFeature(deps: {
       for (const [slot, change] of pageChanges) {
         state.buttons[slot - 1] = change.parent;
         if (change.page) state.subpages[String(slot)] = change.page;
+        if (change.badges) state.badgeRows[String(slot)] = change.badges;
       }
       for (const removePageSlot of removePageSlots) {
         state.buttons[removePageSlot - 1] = cardContractDefaultConfig("");
@@ -611,7 +673,8 @@ export function createBadgeRowFeature(deps: {
     if (cardType !== null && !draft.card) draft.card = badgeToCard(draft.button);
     const settingsOpen = config!.querySelector("#sp-badge-inp-card-settings")?.getAttribute("aria-expanded") === "true";
     const cardDefinition = cardType !== null ? deps.cards.definitions[cardType]! : null;
-    const label = cardDefinition ? (typeof cardDefinition.label === "function" ? cardDefinition.label() : cardDefinition.label)
+    const label = cardDefinition ? deps.pickerOptions().find(type => type.key === (cardContractPickerKey(cardType) || cardType))?.label ||
+      (typeof cardDefinition.label === "function" ? cardDefinition.label() : cardDefinition.label)
       : BADGE_SUBTYPES.find(type => type.key === badgeSubtype(draft!.button))?.label || "Badge";
     header(label + " Badge");
     const current = draft;
@@ -661,10 +724,29 @@ export function createBadgeRowFeature(deps: {
         panel.appendChild(field.field);
       }
       cardDefinition.renderSettings?.(panel, settingsButton, current.index, helpers);
+      const displayChoices: Array<[string, string]> = [["card", "Card display"], ["label", "Label"]];
+      if (badgeCardSupportsValue(settingsButton) || badgeCardDisplay(current.button) === "value") displayChoices.push(["value", "Live value"]);
+      const display = fields.selectField("Badge Display", helpers.idPrefix + "badge-display", displayChoices,
+        badgeCardDisplay(current.button), (event: Event) => {
+          const value = (event.target as HTMLSelectElement).value;
+          current.button.options = setConfigOptionValue(current.button.options, "badge_display", value === "card" ? "" : value);
+          renderEditor();
+          deps.renderPreview();
+        });
+      panel.appendChild(display.field);
       const editPage = panel.querySelector(".sp-edit-subpage-btn");
       if (editPage) fields.markCardPrimaryField(editPage, "card");
     } else deps.cards.definitions.badge!.renderSettings!(panel, current.button, current.index, helpers);
-    const nameField = panel.querySelector<HTMLElement>('[data-sp-card-primary="name"]');
+    let nameField = panel.querySelector<HTMLElement>('[data-sp-card-primary="name"]');
+    if (current.card && badgeCardDisplay(current.button) === "label" && !["clock", "calendar", "screen_lock"].includes(current.card.type)) {
+      if (!nameField) {
+        const added = textField("Label", helpers.idPrefix + "label", settingsButton.label, "e.g. Kitchen", "label").field as HTMLElement;
+        panel.appendChild(added);
+        nameField = added;
+      }
+      nameField.hidden = false;
+      nameField.style.display = "";
+    }
     if (nameField && nameField.parentElement !== panel) panel.insertBefore(nameField, panel.querySelector(":scope > .sp-disclosure"));
     const entityFieldElement = panel.querySelector<HTMLElement>(':scope > [data-sp-card-primary="entity"]');
     if (nameField?.parentElement === panel && entityFieldElement) panel.insertBefore(entityFieldElement, nameField);
@@ -697,7 +779,7 @@ export function createBadgeRowFeature(deps: {
       management.appendChild(button("", () => {
         const next = badges(current.page).map(cloneCardConfig);
         const [removed] = next.splice(current.index, 1);
-        const orphan = orphanBadgePage(removed!, next, current.page);
+        const orphan = orphanBadgePage(removed!, current.page);
         void save(next, current.page, true, orphan === null ? [] : [orphan]);
       }, "sp-action-btn sp-delete-btn", "trash-can-outline", "Delete"));
       actions.appendChild(management);

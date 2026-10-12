@@ -1,7 +1,8 @@
 import type { CardConfig } from "../contracts/types";
 import { cloneCardConfig } from "../model/card";
 import { badgeAction, badgeSubtype, normalizeBadgeConfig } from "../model/badge";
-import { badgeCardType } from "../model/badge_card";
+import { badgeCardType, badgeToCard } from "../model/badge_card";
+import { badgeCardDisplay, badgeCardSupportsValue } from "../model/badge_card_display";
 import { cardContractDomains, cardContractCard } from "../generated/card_contract";
 import { configOptionEnabled, configOptionValue, setConfigOption, setConfigOptionValue } from "../model/config_primitives";
 import type { ControlsFieldsFeature } from "./controls_fields";
@@ -77,13 +78,22 @@ export function renderBadgeBulkSettings(panel: HTMLElement, sources: CardConfig[
     input.addEventListener("change", () => { changed(input.value); helpers.onChange(); });
     wrapper.appendChild(input);
   }
-  if (subtype && subtype !== "subpage" && (subtype !== "card" || cardType !== undefined)) {
-    const domains = cardType !== null && cardType !== undefined ? cardContractDomains(cardType) : subtype === "slider" ? ["light", "fan", "number", "input_number", "media_player"]
+  const nativeCards = sources.map(badgeToCard);
+  const localSource = sources.some(source => badgeCardType(source) === "local_sensor" ||
+    (["sensor", "action", "local"].includes(badgeCardType(source) || "") && source.sensor === "local"));
+  if (subtype && subtype !== "subpage" && (subtype !== "card" || cardType !== undefined) && !localSource) {
+    let domains = cardType !== null && cardType !== undefined ? cardContractDomains(cardType) : subtype === "slider" ? ["light", "fan", "number", "input_number", "media_player"]
       : subtype === "switch" ? ["light", "switch", "input_boolean", "fan"]
       : subtype === "button" ? ["button", "input_button"] : [];
-    text("Entity", subtype === "sensor" || ["sensor", "local_sensor", "door_window", "presence"].includes(cardType || "") ? "sensor" : "entity", domains);
+    // Native modes can bind different fields or domains. Keep mixed-mode entities intact.
+    const sharedMode = same(nativeCards.map(card => card.sensor));
+    const modeMatches = !["action", "local", "media", "cover"].includes(cardType || "") || sharedMode !== undefined;
+    if (cardType === "action" && sharedMode?.includes(".")) domains = domains.filter(domain => domain === sharedMode.split(".")[0]);
+    if (subtype !== "card" || (domains.length && modeMatches)) {
+      text("Entity", subtype === "sensor" || ["sensor", "door_window", "presence"].includes(cardType || "") ? "sensor" : "entity", domains);
+    }
   }
-  if (sources.every(source => badgeSubtype(source) !== "sensor")) text("Label", "label");
+  if (sources.every(source => badgeSubtype(source) !== "sensor" && !["clock", "calendar", "screen_lock"].includes(badgeCardType(source) || ""))) text("Label", "label");
   panel.appendChild(helpers.iconPickerField("sp-badge-bulk-icon-picker", "sp-badge-bulk-icon", common("icon") || "Auto", value => {
     edits.set("icon", value);
     helpers.onChange();
@@ -93,6 +103,14 @@ export function renderBadgeBulkSettings(panel: HTMLElement, sources: CardConfig[
       if (value === "__keep") edits.delete("precision"); else edits.set("precision", value);
     });
     if (subtype !== "sensor" && subtype !== "slider") text("Display Entity", "sensor");
+  }
+  if (sources.every(source => badgeCardType(source) !== null)) {
+    const choices: Array<[string, string]> = [["card", "Card display"], ["label", "Label"]];
+    if (sources.every(source => badgeCardSupportsValue(badgeToCard(source))) || same(sources.map(badgeCardDisplay)) === "value") choices.push(["value", "Live value"]);
+    select("Badge Display", "badge-display", same(sources.map(badgeCardDisplay)), choices, value => {
+      if (value === "__keep") optionEdits.delete("badge_display");
+      else optionEdits.set("badge_display", value === "card" ? "" : value);
+    });
   }
   if (sources.every(source => badgeCardType(source) === null && !["button", "slider"].includes(badgeSubtype(source)))) {
     text("Unit (optional)", "unit");

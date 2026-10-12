@@ -39,6 +39,8 @@ export function normalizeBadgeConfig(button: CardConfig): void {
   if (cardType !== null) {
     button.type = "badge";
     button.options = setConfigOptionValue(button.options, "badge_action", cardType === "subpage" ? "subpage" : "card");
+    const display = configOptionValue(button.options, "badge_display");
+    if (display !== "label" && display !== "value") button.options = setConfigOptionValue(button.options, "badge_display", "");
     const page = configOptionValue(button.options, "badge_page");
     if (cardType !== "subpage" || !/^[1-9]\d?$/.test(page) || Number(page) > 32) {
       button.options = setConfigOptionValue(button.options, "badge_page", "");

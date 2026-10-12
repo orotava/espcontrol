@@ -305,6 +305,7 @@ constexpr const char *CARD_CONTRACT_OPTION_NAME_BADGE_ACTION = "badge_action";
 constexpr const char *CARD_CONTRACT_OPTION_NAME_BADGE_ATTRIBUTE = "badge_attribute";
 constexpr const char *CARD_CONTRACT_OPTION_NAME_BADGE_CARD_TYPE = "badge_card_type";
 constexpr const char *CARD_CONTRACT_OPTION_NAME_BADGE_DECIMALS = "badge_decimals";
+constexpr const char *CARD_CONTRACT_OPTION_NAME_BADGE_DISPLAY = "badge_display";
 constexpr const char *CARD_CONTRACT_OPTION_NAME_BADGE_PAGE = "badge_page";
 constexpr const char *CARD_CONTRACT_OPTION_NAME_CENTER_CLOCK = "center_clock";
 constexpr const char *CARD_CONTRACT_OPTION_NAME_CLIMATE_TABS = "climate_tabs";

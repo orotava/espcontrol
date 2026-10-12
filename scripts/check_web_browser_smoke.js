@@ -21,6 +21,9 @@ const WEB_OUTPUT_DIR = freshWebOutputDir();
 const FAILURE_DIR = path.join(ROOT, ".cache", "web-browser-smoke");
 const { serializeBadgeRow, parseBadgeRow } = loadTypeScriptModule(path.join(ROOT, "src/webserver/model/badge_row.ts"));
 const { configOptionValue } = loadTypeScriptModule(path.join(ROOT, "src/webserver/model/config_primitives.ts"));
+const { badgeToCard } = loadTypeScriptModule(path.join(ROOT, "src/webserver/model/badge_card.ts"));
+const { parseRawSubpageConfig } = loadTypeScriptModule(path.join(ROOT, "src/webserver/model/subpage.ts"));
+const { cardContractSubpageTypeFromCode } = loadTypeScriptModule(path.join(ROOT, "src/webserver/generated/card_contract.ts"));
 
 function readManifest() {
   return JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf8"));
@@ -6386,6 +6389,19 @@ async function assertPanelNaming(browser) {
 async function assertBadgeJourney(browser, testCase) {
   const context = await browser.newContext({ viewport: testCase.viewport });
   const nativeState = nativeConfigState(testCase.slug);
+  function assertBadgeCopies(copies, originals) {
+    assert.equal(copies.length, originals.length);
+    copies.forEach((copy, index) => {
+      const source = originals[index];
+      const originalSlot = Number(configOptionValue(source.options, "badge_page"));
+      if (!originalSlot) { assert.deepStrictEqual(copy, source); return; }
+      const copiedSlot = Number(configOptionValue(copy.options, "badge_page"));
+      assert(copiedSlot > 0 && copiedSlot !== originalSlot, "A copied Subpage badge owns a unique destination");
+      assert.deepStrictEqual(badgeToCard(copy), badgeToCard(source), "The copied badge keeps its card settings");
+      assert.deepStrictEqual(parseRawSubpageConfig(nativeState.document.subpages[copiedSlot], cardContractSubpageTypeFromCode),
+        parseRawSubpageConfig(nativeState.document.subpages[originalSlot], cardContractSubpageTypeFromCode), "The unique page keeps every card and its layout");
+    });
+  }
   const badge = (label, options = "", extra = {}) => ({ entity: "", label, icon: "Home", icon_on: "Auto", sensor: "", unit: "", type: "badge", precision: "label", options, ...extra });
   nativeState.document.settings.badge_row_0 = serializeBadgeRow([
     badge("Kitchen", "badge_action=modal", { entity: "climate.kitchen", sensor: "sensor.kitchen_temperature", precision: "value", icon: "Thermometer", unit: "°C" }),
@@ -6529,6 +6545,53 @@ async function assertBadgeJourney(browser, testCase) {
     const firstBadge = page.locator('.sp-badge-row [data-badge-index="0"]');
     const rowBadge = index => page.locator(`.sp-badge-row [data-badge-index="${index}"]`);
     const selectedBadges = page.locator(".sp-badge-row .sp-badge-card.sp-selected");
+    async function badgeDisplay(value) {
+      const field = dialog.locator("#sp-badge-inp-badge-display");
+      if (!(await field.isVisible())) await dialog.getByRole("button", { name: "Badge Settings", exact: true }).click();
+      await field.selectOption(value);
+    }
+    async function familyBadge(type, entity) {
+      await addBadgeButton.click();
+      await dialog.locator('[data-badge-type="' + type + '"]').click();
+      await dialog.locator('[data-sp-card-primary="entity"] input').first().fill(entity);
+      await badgeDisplay("label");
+      await dialog.locator('[data-sp-card-primary="name"] input').first().fill("Office control");
+    }
+    async function saveFamilyBadge(expectedType, expectedDisplay, expectedText) {
+      await dialog.getByRole("button", { name: "Save", exact: true }).click();
+      await dialog.waitFor({ state: "hidden" });
+      const saved = parseBadgeRow(nativeState.document.settings.badge_row_0)[5];
+      assert.equal(configOptionValue(saved.options, "badge_card_type"), expectedType);
+      assert.equal(configOptionValue(saved.options, "badge_display"), expectedDisplay);
+      assert.equal(await rowBadge(5).locator(".sp-badge-text").innerText(), expectedText);
+      await rowBadge(5).click({ button: "right" });
+      await page.locator(".sp-ctx-menu").getByText("Delete", { exact: true }).click();
+      await waitForNativeState(nativeState, () => parseBadgeRow(nativeState.document.settings.badge_row_0).length === 5, "Remove typed display test badge");
+    }
+    await familyBadge("light_brightness", "light.kitchen");
+    await dialog.locator("#sp-badge-inp-light-control-type").selectOption("light_brightness");
+    assert.equal(await rowBadge(5).locator(".sp-badge-text").innerText(), "Office control", "Brightness can keep its name while retaining the slider");
+    await dialog.locator("#sp-badge-inp-light-control-type").selectOption("light_temperature");
+    assert.equal(await dialog.locator("#sp-badge-inp-badge-display").inputValue(), "label", "Light mode changes retain the badge display choice");
+    await badgeDisplay("value");
+    await saveFamilyBadge("light_temperature", "value", "3000K");
+    await familyBadge("fan_speed", "fan.office");
+    await dialog.locator("#sp-badge-inp-fan-control-type").selectOption("fan_speed");
+    await saveFamilyBadge("fan_speed", "label", "Office control");
+    await familyBadge("media", "media_player.kitchen");
+    await dialog.locator("#sp-badge-inp-media-mode").selectOption("position");
+    await badgeDisplay("value");
+    await saveFamilyBadge("media", "value", "0:00");
+    await familyBadge("climate", "climate.kitchen");
+    await badgeDisplay("card");
+    const climateLabel = dialog.getByText("Label Display", { exact: true }).locator("..");
+    if (!(await climateLabel.isVisible())) await dialog.getByRole("button", { name: "Badge Settings", exact: true }).click();
+    await climateLabel.getByRole("button", { name: "Actual", exact: true }).click();
+    assert.match(await rowBadge(5).locator(".sp-badge-text").innerText(), /^21/, "Climate displays the selected actual temperature instead of another visible number");
+    await climateLabel.getByRole("button", { name: "Target", exact: true }).click();
+    const targetTemperature = await rowBadge(5).locator(".sp-badge-text").innerText();
+    assert.match(targetTemperature, /^20/);
+    await saveFamilyBadge("climate_control", "", targetTemperature);
     // Existing slider badges must honor the saved Label choice in both the
     // editor and the compact preview, while retaining their slider fill.
     await rowBadge(2).click();
@@ -6608,11 +6671,16 @@ async function assertBadgeJourney(browser, testCase) {
     await page.locator(".sp-ctx-menu").getByText("Duplicate 2 Badges", { exact: true }).click();
     await waitForNativeState(nativeState, () => parseBadgeRow(nativeState.document.settings.badge_row_0).length === 7, "Duplicate selected badges");
     assert.equal(await selectedBadges.count(), 2, "The duplicated badges remain selected");
-    assert.deepStrictEqual(parseBadgeRow(nativeState.document.settings.badge_row_0).slice(2, 4), afterBulkEdit.slice(0, 2));
+    const duplicatedBadges = parseBadgeRow(nativeState.document.settings.badge_row_0).slice(2, 4);
+    assertBadgeCopies(duplicatedBadges, afterBulkEdit.slice(0, 2));
     await rowBadge(2).click({ button: "right" });
     await page.locator(".sp-ctx-menu").getByText("Delete 2 Badges", { exact: true }).click();
     await waitForNativeState(nativeState, () => parseBadgeRow(nativeState.document.settings.badge_row_0).length === 5, "Delete selected badge duplicates");
     assert.deepStrictEqual(parseBadgeRow(nativeState.document.settings.badge_row_0), afterBulkEdit);
+    for (const duplicate of duplicatedBadges) {
+      const slot = Number(configOptionValue(duplicate.options, "badge_page"));
+      if (slot) assert(!nativeState.document.buttons[slot] && !nativeState.document.subpages[slot], "Deleting a duplicate removes its unused page");
+    }
     await firstBadge.click();
     await rowBadge(2).click({ modifiers: ["Control"] });
     await page.locator(".sp-selection-bar").getByRole("button", { name: "Badge actions", exact: true }).click();
@@ -6627,7 +6695,7 @@ async function assertBadgeJourney(browser, testCase) {
     await addBadgeButton.click();
     await dialog.getByRole("button", { name: "Paste copied badges", exact: true }).click();
     await waitForNativeState(nativeState, () => parseBadgeRow(nativeState.document.settings.badge_row_0).length === 7, "Paste selected badges");
-    assert.deepStrictEqual(parseBadgeRow(nativeState.document.settings.badge_row_0).slice(5), [afterBulkEdit[0], afterBulkEdit[2]]);
+    assertBadgeCopies(parseBadgeRow(nativeState.document.settings.badge_row_0).slice(5), [afterBulkEdit[0], afterBulkEdit[2]]);
     await rowBadge(5).click({ button: "right" });
     await page.locator(".sp-ctx-menu").getByText("Cut 2 Badges", { exact: true }).click();
     await waitForNativeState(nativeState, () => parseBadgeRow(nativeState.document.settings.badge_row_0).length === 5, "Cut selected badges");
@@ -6845,7 +6913,7 @@ async function assertBadgeJourney(browser, testCase) {
     await addTypedBadge("slider");
     await page.locator("#sp-badge-inp-entity").pressSequentially("number.kitchen_target");
     await dialog.getByRole("button", { name: "Badge Settings", exact: true }).click();
-    for (const field of ["badge-display", "sensor", "unit", "badge-attribute", "badge-decimals"]) {
+    for (const field of ["sensor", "unit", "badge-attribute", "badge-decimals"]) {
       assert.equal(await dialog.locator("#sp-badge-inp-" + field).count(), 0, "Slider settings omit " + field);
     }
     assert.equal(await dialog.locator("#sp-badge-inp-badge-active").count(), 0, "Slider settings follow the existing slider card");
@@ -6868,8 +6936,26 @@ async function assertBadgeJourney(browser, testCase) {
     }
     assert(await dialog.locator("#sp-badge-bulk-entity").isVisible(), "Bulk slider editing keeps the control entity");
     assert.equal(await dialog.locator("#sp-badge-bulk-active").count(), 0, "Bulk slider editing omits unsupported card options");
+    await dialog.locator("#sp-badge-bulk-badge-display").selectOption("label");
+    await dialog.locator("#sp-badge-bulk-label").fill("Kitchen target");
     await dialog.getByRole("button", { name: "Save", exact: true }).click();
     await dialog.waitFor({ state: "hidden" });
+    for (const index of [4, 5]) {
+      const item = parseBadgeRow(nativeState.document.settings.badge_row_3)[index];
+      assert.equal(configOptionValue(item.options, "badge_display"), "label", "Bulk typed display saves the badge choice");
+      assert.equal(item.entity, savedSlider.entity, "Changing the display leaves the control entity intact");
+      assert.equal(await rowBadge(index).locator(".sp-badge-text").innerText(), "Kitchen target");
+    }
+    await rowBadge(4).click();
+    await rowBadge(5).click({ modifiers: ["Control"] });
+    await page.locator(".sp-selection-bar").getByRole("button", { name: "Edit", exact: true }).click();
+    await dialog.getByRole("button", { name: "Badge Settings", exact: true }).click();
+    assert.equal(await dialog.locator("#sp-badge-bulk-badge-display").inputValue(), "label");
+    await dialog.locator("#sp-badge-bulk-badge-display").selectOption("card");
+    await dialog.locator("#sp-badge-bulk-label").fill(savedSlider.label);
+    await dialog.getByRole("button", { name: "Save", exact: true }).click();
+    await dialog.waitFor({ state: "hidden" });
+    assert.equal(await rowBadge(4).locator(".sp-badge-text").innerText(), "35", "Bulk Card display restores the native reading");
     await rowBadge(5).click();
     await rowBadge(5).click({ button: "right" });
     await page.locator(".sp-ctx-menu").getByText("Delete", { exact: true }).click();
@@ -6973,10 +7059,70 @@ async function assertBadgeJourney(browser, testCase) {
     assert(await page.locator(".sp-back-btn").isVisible(), "A saved badge opens its linked page directly");
     await page.locator(".sp-back-btn .sp-back-hit").click();
     await page.locator('.sp-main [data-slot="3"] .sp-subpage-badge').click();
+    // Copying a private page must preserve its cards and nested badge pages.
+    const nestedSlot = testCase.slots;
+    assert(!nativeState.document.buttons[nestedSlot], "The nested page fixture uses an unused slot");
+    nativeState.document.subpages[savedPageSlot] = nativeState.document.subpages[3];
+    nativeState.document.buttons[nestedSlot] = nativeState.document.buttons[savedPageSlot];
+    nativeState.document.subpages[nestedSlot] = nativeState.document.subpages[3];
+    nativeState.document.settings["badge_row_" + savedPageSlot] = serializeBadgeRow([
+      badge("Nested controls", "badge_action=subpage,badge_page=" + nestedSlot),
+    ]);
+    const nestedControls = [badge("Number", "badge_action=card,badge_card_type=slider,badge_display=label", { entity: "number.office", precision: "", icon: "Tune" })];
+    nativeState.document.settings["badge_row_" + nestedSlot] = serializeBadgeRow(nestedControls);
+    const rootCards = nativeState.document.subpages[savedPageSlot];
+    const nestedCards = nativeState.document.subpages[nestedSlot];
+    async function reloadBadgeFixture() {
+      await page.reload({ waitUntil: "domcontentloaded" });
+      await page.waitForSelector("#sp-app");
+      await page.waitForFunction(() => window.__eventSources?.length > 0);
+      await seedNativeDocument(page, nativeState);
+      await page.waitForFunction(() => document.querySelectorAll(".sp-badge-row .sp-badge-card").length >= 5);
+      await page.locator('.sp-main [data-slot="3"] .sp-subpage-badge').click();
+    }
+    await reloadBadgeFixture();
+    const writesBeforePageDuplicate = nativeState.puts.length;
+    await rowBadge(0).click({ button: "right" });
+    await page.locator(".sp-ctx-menu").getByText("Duplicate", { exact: true }).click();
+    await waitForNativeState(nativeState, () => parseBadgeRow(nativeState.document.settings.badge_row_3).length === 2, "Duplicate a nested badge page");
+    const duplicatedRoot = Number(configOptionValue(parseBadgeRow(nativeState.document.settings.badge_row_3)[1].options, "badge_page"));
+    const duplicatedChild = Number(configOptionValue(parseBadgeRow(nativeState.document.settings["badge_row_" + duplicatedRoot])[0].options, "badge_page"));
+    assert(duplicatedRoot !== savedPageSlot && duplicatedChild !== nestedSlot && duplicatedRoot !== duplicatedChild, "Every copied page gets its own destination");
+    assert.deepEqual(parseRawSubpageConfig(nativeState.document.subpages[duplicatedRoot], cardContractSubpageTypeFromCode), parseRawSubpageConfig(rootCards, cardContractSubpageTypeFromCode));
+    assert.deepEqual(parseRawSubpageConfig(nativeState.document.subpages[duplicatedChild], cardContractSubpageTypeFromCode), parseRawSubpageConfig(nestedCards, cardContractSubpageTypeFromCode));
+    const canonicalBadges = items => items.map(item => ({ ...item, options: item.options.split(",").sort().join(",") }));
+    assert.deepEqual(canonicalBadges(parseBadgeRow(nativeState.document.settings["badge_row_" + duplicatedChild])), canonicalBadges(nestedControls));
+    assert.equal(nativeState.puts.length, writesBeforePageDuplicate + 1, "The complete nested copy is written atomically");
+    await rowBadge(1).click({ button: "right" });
+    await page.locator(".sp-ctx-menu").getByText("Delete", { exact: true }).click();
+    await waitForNativeState(nativeState, () => parseBadgeRow(nativeState.document.settings.badge_row_3).length === 1, "Delete a copied nested page");
+    for (const slot of [duplicatedRoot, duplicatedChild]) assert(!nativeState.document.buttons[slot] && !nativeState.document.subpages[slot] && !nativeState.document.settings["badge_row_" + slot], "Deleting the copy removes its unused descendants");
+    assert.equal(nativeState.document.subpages[savedPageSlot], rootCards, "Deleting a copy preserves its original page");
+    await rowBadge(0).click({ button: "right" });
+    await page.locator(".sp-ctx-menu").getByText("Cut", { exact: true }).click();
+    await waitForNativeState(nativeState, () => !nativeState.document.settings.badge_row_3, "Cut a nested badge page");
+    assert(!nativeState.document.buttons[savedPageSlot] && !nativeState.document.buttons[nestedSlot], "Cut removes the unused original pages");
+    await addBadgeButton.click();
+    await dialog.getByRole("button", { name: "Paste copied badge", exact: true }).click();
+    await waitForNativeState(nativeState, () => parseBadgeRow(nativeState.document.settings.badge_row_3).length === 1, "Paste a cut nested page");
+    const pastedRoot = Number(configOptionValue(parseBadgeRow(nativeState.document.settings.badge_row_3)[0].options, "badge_page"));
+    const pastedChild = Number(configOptionValue(parseBadgeRow(nativeState.document.settings["badge_row_" + pastedRoot])[0].options, "badge_page"));
+    assert.deepEqual(parseRawSubpageConfig(nativeState.document.subpages[pastedRoot], cardContractSubpageTypeFromCode), parseRawSubpageConfig(rootCards, cardContractSubpageTypeFromCode), "Cut and paste retain the root cards");
+    assert.deepEqual(parseRawSubpageConfig(nativeState.document.subpages[pastedChild], cardContractSubpageTypeFromCode), parseRawSubpageConfig(nestedCards, cardContractSubpageTypeFromCode), "Cut and paste retain nested cards");
+    assert.deepEqual(canonicalBadges(parseBadgeRow(nativeState.document.settings["badge_row_" + pastedChild])), canonicalBadges(nestedControls));
+    const homeBadges = parseBadgeRow(nativeState.document.settings.badge_row_0);
+    nativeState.document.settings.badge_row_0 = serializeBadgeRow([...homeBadges, badge("Shared child", "badge_action=subpage,badge_page=" + pastedChild)]);
+    await reloadBadgeFixture();
     await rowBadge(0).click({ button: "right" });
     await page.locator(".sp-ctx-menu").getByText("Delete", { exact: true }).click();
     await waitForNativeState(nativeState, () => !nativeState.document.settings.badge_row_3, "Remove temporary saved subpage badge");
+    assert(!nativeState.document.buttons[pastedRoot], "Deleting the root removes its unused page");
+    assert(nativeState.document.buttons[pastedChild] && nativeState.document.subpages[pastedChild], "A child linked elsewhere is preserved");
     await page.locator(".sp-back-btn .sp-back-hit").click();
+    await rowBadge(homeBadges.length).click({ button: "right" });
+    await page.locator(".sp-ctx-menu").getByText("Delete", { exact: true }).click();
+    await waitForNativeState(nativeState, () => parseBadgeRow(nativeState.document.settings.badge_row_0).length === homeBadges.length, "Remove final shared page link");
+    assert(!nativeState.document.buttons[pastedChild] && !nativeState.document.subpages[pastedChild], "Removing the last link removes the unused child page");
     await importBackup(page, exported, "badge-row-restore");
     await waitForNativeState(nativeState, () => !!nativeState.document.settings.badge_row_3, "Badge row backup restore");
     assert.deepEqual(nativeState.document.buttons, exportedNative.buttons, "Restoring rows retains the exported cards");

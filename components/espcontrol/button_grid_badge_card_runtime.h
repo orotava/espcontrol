@@ -1,4 +1,5 @@
 #pragma once
+#include "badge_card_display_policy.h"
 
 // Card-backed badges own a normal card runtime. The compact surface mirrors
 // its state and uses its original slider or click handler. Modal controls
@@ -11,6 +12,8 @@ struct BadgeCardRuntime {
   ParsedCfg config;
   GridConfig grid;
   lv_obj_t *source_slider = nullptr;
+  espcontrol::badge::CardContent content = espcontrol::badge::CardContent::AUTO;
+  std::string caption;
   bool width_fitted = false;
   bool has_sensor = false, text_sensor = false, has_icon_on = false;
   const char *icon_off = nullptr, *icon_on = nullptr;
@@ -20,14 +23,21 @@ struct BadgeCardRuntime {
     if (!ctx->value_label) return;
     const bool numeric = slot.sensor_container && !lv_obj_has_flag(slot.sensor_container, LV_OBJ_FLAG_HIDDEN) &&
       slot.sensor_lbl && !lv_obj_has_flag(slot.sensor_lbl, LV_OBJ_FLAG_HIDDEN);
-    std::string text = numeric ? lv_label_get_text(slot.sensor_lbl) : lv_label_get_text(slot.text_lbl);
-    if (config.type == "media" && slot.sensor_container &&
+    using Content = espcontrol::badge::CardContent;
+    std::string text = lv_label_get_text(slot.text_lbl);
+    if ((content == Content::VALUE || content == Content::AUTO || content == Content::DATE || content == Content::DATETIME) && numeric) {
+      text = lv_label_get_text(slot.sensor_lbl);
+      if (slot.unit_lbl && !lv_obj_has_flag(slot.unit_lbl, LV_OBJ_FLAG_HIDDEN)) text += lv_label_get_text(slot.unit_lbl);
+      if (text != "--" && content == Content::DATE) text += std::string(" ") + lv_label_get_text(slot.text_lbl);
+      if (text != "--" && content == Content::DATETIME) text = std::string(lv_label_get_text(slot.text_lbl)) + " · " + text;
+    }
+    if (content == Content::TRACK && slot.sensor_container &&
         (media_card_mode(config.sensor) == "now_playing" || media_card_mode(config.sensor) == "cover_art")) {
       auto *media = static_cast<MediaNowPlayingCtx *>(lv_obj_get_user_data(slot.sensor_container));
       if (media && media->title_lbl && !lv_obj_has_flag(media->title_lbl, LV_OBJ_FLAG_HIDDEN)) text = lv_label_get_text(media->title_lbl);
       else if (media && media->idle_lbl && !lv_obj_has_flag(media->idle_lbl, LV_OBJ_FLAG_HIDDEN)) text = lv_label_get_text(media->idle_lbl);
     }
-    if (source_slider) {
+    if (content == Content::SLIDER && source_slider) {
       const auto *control = static_cast<SliderCtx *>(lv_obj_get_user_data(source_slider));
       const int position = lv_slider_get_value(source_slider);
       if (!control || !control->available) text = "--";
@@ -41,8 +51,11 @@ struct BadgeCardRuntime {
         // Keep the track title while its original seek slider fills the pill.
       } else if (control->media_position && control->media_value_lbl) text = lv_label_get_text(control->media_value_lbl);
       else text = std::to_string(position) + "%";
-    } else if (numeric && slot.unit_lbl && !lv_obj_has_flag(slot.unit_lbl, LV_OBJ_FLAG_HIDDEN)) text += lv_label_get_text(slot.unit_lbl);
-    if (text.empty()) text = config.label.empty() ? "--" : config.label;
+    }
+    if (content == Content::LABEL) {
+      text = caption;
+    }
+    if (text.empty()) text = config.label.empty() ? espcontrol_i18n(card_runtime_label(config.type)) : config.label;
     const bool changed = text != lv_label_get_text(ctx->value_label);
     if (changed) lv_label_set_display_text(ctx->value_label, text.c_str());
     if (slot.icon_lbl && std::strlen(lv_label_get_text(slot.icon_lbl))) {
@@ -181,6 +194,10 @@ inline void badge_card_runtime_setup(BadgeCtx *ctx, const ParsedCfg &config,
     return;
   }
   runtime->config.options = espcontrol::badge::card_options(config.options);
+  runtime->content = espcontrol::badge::card_content(runtime->config.type, runtime->config.sensor,
+    runtime->config.precision, cfg_option_value(config.options, "badge_display"));
+  runtime->caption = runtime->config.label.empty()
+    ? espcontrol_i18n(card_runtime_label(runtime->config.type)) : runtime->config.label;
   const auto display = display_profile_from_grid_config(grid);
   const auto *font = lv_obj_get_style_text_font(reference.text_lbl, LV_PART_MAIN);
   const auto color = lv_obj_get_style_text_color(reference.btn, LV_PART_MAIN);
@@ -192,6 +209,17 @@ inline void badge_card_runtime_setup(BadgeCtx *ctx, const ParsedCfg &config,
   runtime->slot = create_dynamic_card_slot(proxy, display_icon_font(display), display_sensor_font(display), font, color, grid.subpage_chevron_font);
   setup_card_visual(runtime->slot, runtime->config, card_runtime_context(runtime->config, Surface::SUBPAGE), runtime->grid, palette, 1, 1);
   badge_card_bind_runtime(*runtime, palette);
+  if (runtime->content == espcontrol::badge::CardContent::LABEL && runtime->config.label.empty()) {
+    const auto &sensor = runtime->config.sensor;
+    const auto &entity = runtime->config.entity;
+    const auto target = sensor.find('.') != std::string::npos ? sensor : entity;
+    if (target.find('.') != std::string::npos) {
+      HaCallbackOwnerScope owner(proxy);
+      ha_subscribe_attribute(target, "friendly_name", [runtime](esphome::StringRef name) {
+        if (!ha_state_unavailable_ref(name) && !name.empty()) runtime->caption = string_ref_limited(name, HA_FRIENDLY_NAME_MAX_LEN);
+      });
+    }
+  }
   runtime->source_slider = badge_card_find_slider(proxy);
   lv_obj_add_flag(proxy, LV_OBJ_FLAG_HIDDEN);
   ctx->card_refresh = [runtime] { runtime->refresh(); };

@@ -210,6 +210,18 @@ export const CARD_CONTRACT_CARDS: Readonly<Record<string, CardTypeSpec>> = {
         "omitDefault": true
       },
       {
+        "name": "badge_display",
+        "label": "Badge Display",
+        "kind": "choice",
+        "values": [
+          "card",
+          "label",
+          "value"
+        ],
+        "defaultValue": "card",
+        "omitDefault": true
+      },
+      {
         "name": "badge_page",
         "label": "Subpage",
         "kind": "text",
@@ -4885,6 +4897,7 @@ export const CARD_CONTRACT_OPTION_NAMES: Readonly<Record<string, string>> = {
   "badge_attribute": "badge_attribute",
   "badge_card_type": "badge_card_type",
   "badge_decimals": "badge_decimals",
+  "badge_display": "badge_display",
   "badge_page": "badge_page",
   "center_clock": "center_clock",
   "climate_tabs": "climate_tabs",
