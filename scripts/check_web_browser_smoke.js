@@ -6436,7 +6436,7 @@ async function assertBadgeJourney(browser, testCase) {
         height: pill.getBoundingClientRect().height, textSize: parseFloat(badge.fontSize), iconSize: parseFloat(icon.fontSize) };
     });
     assert(typography.matching, "Badge text uses the same font, weight and size as card labels");
-    assert(typography.height <= typography.textSize * 2 + 1 && typography.iconSize <= typography.textSize + 1, "Badges and icons use the reduced compact sizes");
+    assert(typography.height <= typography.textSize * 2.4 + 1 && typography.iconSize <= typography.textSize * 1.2 + 1, "Badge and icon sizes match the device line-height proportions");
     const rowGeometry = await page.locator(".sp-badge-row").evaluate(row => {
       const bounds = row.getBoundingClientRect();
       const badges = Array.from(row.querySelectorAll(".sp-badge-row-items > .sp-btn"));
