@@ -610,6 +610,9 @@ function composeApplicationContext(): ApplicationContext {
       contextMenuContains: (target) => contextMenu.contains(target),
       openVoiceServicesSettings: () => settingsHelpers.openVoiceServicesSettings(),
       renderBadgeBarControl: (container) => badgeRows?.renderSelectionControl(container),
+      renderSelectedBadgeBar: (container) => badgeRows?.renderSelectedBadgeBar(container) || false,
+      clearBadgeSelection: () => badgeRows?.clearSelection(),
+      hasBadgeSelection: () => badgeRows?.hasSelection() || false,
     },
   );
   preview = createPreviewRenderFeature({
@@ -630,6 +633,7 @@ function composeApplicationContext(): ApplicationContext {
     document: dom.document, runtime, cards, native: nativePanelConfig,
     deviceProfile: layout.deviceId, fields, iconPicker, entities: entityState, shell,
     renderPreview: () => preview.render(),
+    prepareBadgeSelection: () => selection.prepareBadgeSelection(),
   });
   const clipboard = createPreviewClipboardFeature({
     configPersistence: configurationPersistence,

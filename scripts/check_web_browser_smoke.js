@@ -6406,8 +6406,11 @@ async function assertBadgeJourney(browser, testCase) {
     await seedNativeDocument(page, nativeState);
     await page.waitForFunction(() => document.querySelectorAll(".sp-badge-row .sp-badge-card").length === 5);
     const badgeBarControl = page.getByRole("button", { name: "Manage badge bar", exact: true });
+    const addBadgeButton = page.getByRole("button", { name: "Add badge", exact: true });
     assert(await page.locator(".sp-selection-bar").isVisible(), "The edit bar stays visible with no selected card");
     assert(await badgeBarControl.isVisible(), "The badge-bar control appears when no card is selected");
+    assert(await addBadgeButton.isVisible(), "An add badge affordance is always present in the badge row");
+    assert(await page.locator(".sp-badge-row-items > :last-child").evaluate(element => element.classList.contains("sp-badge-add")), "The add badge affordance stays at the end of the row");
     assert.strictEqual(await page.locator(".sp-main .sp-badge-card").count(), 0, "Badges never occupy card slots");
     const gridCount = await page.locator(".sp-main [data-pos]").count();
     assert.strictEqual(await page.locator(".sp-badge-slider .sp-badge-fill").count(), 1);
@@ -6435,7 +6438,7 @@ async function assertBadgeJourney(browser, testCase) {
     assert(typography.height <= typography.textSize * 2 + 1 && typography.iconSize <= typography.textSize + 1, "Badges and icons use the reduced compact sizes");
     const rowGeometry = await page.locator(".sp-badge-row").evaluate(row => {
       const bounds = row.getBoundingClientRect();
-      const badges = Array.from(row.querySelectorAll(".sp-badge-card"));
+      const badges = Array.from(row.querySelectorAll(".sp-badge-row-items > .sp-btn"));
       const first = badges[0].getBoundingClientRect();
       const last = badges[badges.length - 1].getBoundingClientRect();
       return { fits: row.scrollWidth <= row.clientWidth + 1,
@@ -6448,6 +6451,9 @@ async function assertBadgeJourney(browser, testCase) {
     if (process.env.ESPCONTROL_BADGE_SCREENSHOT) await page.locator(".sp-screen").screenshot({ path: process.env.ESPCONTROL_BADGE_SCREENSHOT });
     const dialog = page.locator(".sp-badge-settings-overlay");
     await page.locator('.sp-badge-row [data-badge-index="0"]').click();
+    assert(await page.locator('.sp-badge-row [data-badge-index="0"]').evaluate(badge => badge.classList.contains("sp-selected")), "Clicking a badge selects it");
+    assert(!(await badgeBarControl.isVisible()), "The badge bar control is hidden while a badge is selected");
+    await page.locator(".sp-selection-bar").getByRole("button", { name: "Edit", exact: true }).click();
     assert(await page.locator("#sp-badge-inp-entity").isVisible(), "Primary entity is visible without expanding settings");
     assert(!(await page.locator("#sp-badge-inp-badge-display").isVisible()), "Optional settings start collapsed like card settings");
     await dialog.getByRole("button", { name: "Badge Settings", exact: true }).click();
@@ -6465,14 +6471,12 @@ async function assertBadgeJourney(browser, testCase) {
     assert.equal(nativeState.document.settings.button_order, originalOrder);
     assert.equal(await page.locator(".sp-main [data-pos]").count(), gridCount, "Adding a row preserves every grid cell");
     // Row order is independent of card order.
-    await page.locator('.sp-badge-row [data-badge-index="4"]').click();
-    await dialog.getByRole("button", { name: "Move left", exact: true }).click();
-    await dialog.waitFor({ state: "hidden" });
-    assert.equal(parseBadgeRow(nativeState.document.settings.badge_row_0)[3].label, "2 open");
+    await page.locator('.sp-badge-row [data-badge-index="4"]').dragTo(page.locator('.sp-badge-row [data-badge-index="0"]'), { targetPosition: { x: 1, y: 16 } });
+    await waitForNativeState(nativeState, () => parseBadgeRow(nativeState.document.settings.badge_row_0)[0]?.label === "2 open", "Badge drag reorder");
+    assert.equal(parseBadgeRow(nativeState.document.settings.badge_row_0)[0].label, "2 open");
     // A subpage gets its own row without changing its Back card or card list.
     await page.locator('.sp-main [data-slot="3"] .sp-subpage-badge').click();
-    await badgeBarControl.click();
-    await dialog.getByRole("button", { name: "Add badge", exact: true }).click();
+    await addBadgeButton.click();
     assert.equal(await dialog.locator('[data-badge-type="label"]').count(), 0);
     assert.equal(await dialog.locator('[data-badge-type]').count(), 6);
     if (process.env.ESPCONTROL_BADGE_TYPE_SCREENSHOT) await dialog.locator(".sp-settings-modal").screenshot({ path: process.env.ESPCONTROL_BADGE_TYPE_SCREENSHOT });
@@ -6493,8 +6497,7 @@ async function assertBadgeJourney(browser, testCase) {
         await page.locator(".sp-hint").click();
         await badgeBarControl.waitFor({ state: "visible" });
       }
-      await badgeBarControl.click();
-      await dialog.getByRole("button", { name: "Add badge", exact: true }).click();
+      await addBadgeButton.click();
       await dialog.locator(`[data-badge-type="${type}"]`).click();
       assert.equal(await page.locator("#sp-badge-inp-badge-type").inputValue(), type);
     }
@@ -6535,9 +6538,10 @@ async function assertBadgeJourney(browser, testCase) {
     await dialog.getByRole("button", { name: "Save", exact: true }).click();
     await dialog.waitFor({ state: "hidden" });
     assert.equal(parseBadgeRow(nativeState.document.settings.badge_row_3)[4].entity, "number.kitchen_target");
-    // On a phone, the longest footer (delete + both moves + Save) must fit.
+    // On a phone, the delete and Save controls must fit in the editor footer.
     await page.setViewportSize({ width: 390, height: 844 });
     await page.locator('.sp-badge-row [data-badge-index="2"]').click();
+    await page.locator(".sp-selection-bar").getByRole("button", { name: "Edit", exact: true }).click();
     const footerFits = await dialog.locator(".sp-btn-row--save").evaluate(footer => {
       const bounds = footer.getBoundingClientRect();
       return Array.from(footer.querySelectorAll("button")).every(button => {
@@ -6566,11 +6570,12 @@ async function assertBadgeJourney(browser, testCase) {
     await page.locator('.sp-main [data-slot="3"] .sp-subpage-badge').click();
     for (let remaining = 5; remaining > 0; remaining--) {
       await page.locator('.sp-badge-row [data-badge-index="0"]').click();
-      await dialog.getByRole("button", { name: "Delete", exact: true }).click();
-      await dialog.waitFor({ state: "hidden" });
+      await page.locator(".sp-selection-bar").getByRole("button", { name: "Delete", exact: true }).click();
+      await waitForNativeState(nativeState, () => parseBadgeRow(nativeState.document.settings.badge_row_3).length === remaining - 1, "Badge deletion");
     }
     assert(!nativeState.document.settings.badge_row_3, "Deleting the last badge removes the row record");
-    assert(!(await page.locator(".sp-screen").getAttribute("class")).includes("sp-has-badge-row"));
+    assert((await page.locator(".sp-screen").getAttribute("class")).includes("sp-has-badge-row"), "An empty badge row keeps its add affordance above the grid");
+    assert(await addBadgeButton.isVisible(), "The add badge affordance remains after deleting the last badge");
     await page.locator(".sp-back-btn .sp-back-hit").click();
     await importBackup(page, exported, "badge-row-restore");
     await waitForNativeState(nativeState, () => !!nativeState.document.settings.badge_row_3, "Badge row backup restore");
