@@ -62,7 +62,6 @@ export function normalizeBadgeConfig(button: CardConfig): void {
   button.options = preserveCardColorOptions(source, options);
   button.precision = button.precision === "value" ? "value" : "label";
   if (action === "slider") {
-    button.precision = "value";
     button.sensor = "";
     button.unit = "";
   }

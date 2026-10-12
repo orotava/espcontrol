@@ -67,18 +67,21 @@ test("changing away from navigation removes the old destination while preserving
   assert.equal(badgeAction(button), "modal");
 });
 
-test("existing slider badges always show their own value and discard display overrides", () => {
+test("existing slider badges preserve label/value choices and discard value formatting overrides", () => {
   const button = badge("badge_action=slider,badge_page=6,badge_attribute=current_temperature,badge_decimals=2,active_color,card_off_color=112233");
   button.entity = "number.kitchen_target";
   button.precision = "label";
   normalizeBadgeConfig(button);
-  assert.equal(button.precision, "value");
+  assert.equal(button.precision, "label");
   assert.equal(button.sensor, "");
   assert.equal(button.unit, "");
   assert.equal(button.entity, "number.kitchen_target");
   assert.equal(button.icon, "Home");
   assert.equal(button.options, "badge_action=slider,active_color,card_off_color=112233");
   assert.deepEqual(parseBadgeRow(serializeBadgeRow([button]))[0], button);
+  button.precision = "value";
+  normalizeBadgeConfig(button);
+  assert.equal(parseBadgeRow(serializeBadgeRow([button]))[0].precision, "value");
 });
 
 test("badge rows round-trip Unicode and delimiters independently of card slots", () => {

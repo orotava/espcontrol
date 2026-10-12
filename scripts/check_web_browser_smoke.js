@@ -6529,6 +6529,45 @@ async function assertBadgeJourney(browser, testCase) {
     const firstBadge = page.locator('.sp-badge-row [data-badge-index="0"]');
     const rowBadge = index => page.locator(`.sp-badge-row [data-badge-index="${index}"]`);
     const selectedBadges = page.locator(".sp-badge-row .sp-badge-card.sp-selected");
+    // Existing slider badges must honor the saved Label choice in both the
+    // editor and the compact preview, while retaining their slider fill.
+    await rowBadge(2).click();
+    await page.locator(".sp-selection-bar").getByRole("button", { name: "Edit", exact: true }).click();
+    await dialog.getByRole("button", { name: "Badge Settings", exact: true }).click();
+    await dialog.locator("#sp-badge-inp-badge-display").selectOption("label");
+    await dialog.locator("#sp-badge-inp-label").fill("Sonos");
+    for (const field of ["sensor", "unit", "badge-attribute", "badge-decimals"]) {
+      assert.equal(await dialog.locator("#sp-badge-inp-" + field).count(), 0, "Legacy slider settings omit value formatting: " + field);
+    }
+    assert.equal(await rowBadge(2).locator(".sp-badge-text").innerText(), "Sonos", "Label is previewed immediately");
+    await dialog.getByRole("button", { name: "Save", exact: true }).click();
+    await dialog.waitFor({ state: "hidden" });
+    assert.equal(parseBadgeRow(nativeState.document.settings.badge_row_0)[2].precision, "label", "Saving retains Label instead of forcing a number");
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForFunction(() => window.__eventSources?.length > 0);
+    await seedNativeDocument(page, nativeState);
+    await rowBadge(2).waitFor();
+    assert.equal(await rowBadge(2).locator(".sp-badge-text").innerText(), "Sonos", "Reload preserves the saved slider label");
+    assert.equal(await rowBadge(2).locator(".sp-badge-fill").count(), 1, "Label display keeps its slider fill");
+    await rowBadge(2).click({ button: "right" });
+    await page.locator(".sp-ctx-menu").getByText("Duplicate", { exact: true }).click();
+    await waitForNativeState(nativeState, () => parseBadgeRow(nativeState.document.settings.badge_row_0).length === 6, "Duplicate label slider");
+    await rowBadge(2).click({ modifiers: ["Control"] });
+    await page.locator(".sp-selection-bar").getByRole("button", { name: "Edit", exact: true }).click();
+    await dialog.getByRole("button", { name: "Badge Settings", exact: true }).click();
+    assert.equal(await dialog.locator("#sp-badge-bulk-display").inputValue(), "label", "Bulk settings retain existing labels");
+    assert.equal(await dialog.locator("#sp-badge-bulk-sensor").count(), 0, "Bulk slider display does not add a separate display entity");
+    await dialog.locator("#sp-badge-bulk-display").selectOption("value");
+    await dialog.getByRole("button", { name: "Save", exact: true }).click();
+    await dialog.waitFor({ state: "hidden" });
+    for (const index of [2,3]) {
+      assert.equal(parseBadgeRow(nativeState.document.settings.badge_row_0)[index].precision, "value", "Bulk changes preserve Live value");
+      assert.equal(await rowBadge(index).locator(".sp-badge-text").innerText(), "35%", "Live slider values use whole numbers");
+    }
+    await rowBadge(3).click();
+    await rowBadge(3).click({ button: "right" });
+    await page.locator(".sp-ctx-menu").getByText("Delete", { exact: true }).click();
+    await waitForNativeState(nativeState, () => parseBadgeRow(nativeState.document.settings.badge_row_0).length === 5, "Remove label regression duplicate");
     await firstBadge.click();
     await rowBadge(2).click({ modifiers: ["Shift"] });
     assert.equal(await selectedBadges.count(), 3, "Shift-click selects a badge range");

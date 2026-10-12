@@ -28,7 +28,7 @@ export function renderBadgeBulkSettings(panel: HTMLElement, sources: CardConfig[
   const commonOption = (key: string) => same(sources.map(source => configOptionValue(source.options, key)));
   const subtype = same(sources.map(badgeSubtype));
   const cardType = same(sources.map(badgeCardType));
-  const editableDisplay = sources.every(source => badgeCardType(source) === null && !["sensor", "button", "slider"].includes(badgeSubtype(source)));
+  const editableDisplay = sources.every(source => badgeCardType(source) === null && !["sensor", "button"].includes(badgeSubtype(source)));
   const validators: Array<() => string | null> = [];
   function field(label: string, suffix: string) {
     const wrapper = document.createElement("div");
@@ -83,7 +83,7 @@ export function renderBadgeBulkSettings(panel: HTMLElement, sources: CardConfig[
       : subtype === "button" ? ["button", "input_button"] : [];
     text("Entity", subtype === "sensor" || ["sensor", "local_sensor", "door_window", "presence"].includes(cardType || "") ? "sensor" : "entity", domains);
   }
-  if (sources.every(source => !["sensor", "slider"].includes(badgeSubtype(source)))) text("Label", "label");
+  if (sources.every(source => badgeSubtype(source) !== "sensor")) text("Label", "label");
   panel.appendChild(helpers.iconPickerField("sp-badge-bulk-icon-picker", "sp-badge-bulk-icon", common("icon") || "Auto", value => {
     edits.set("icon", value);
     helpers.onChange();
@@ -92,7 +92,7 @@ export function renderBadgeBulkSettings(panel: HTMLElement, sources: CardConfig[
     select("Display", "display", common("precision"), [["label", "Label"], ["value", "Live value"]], value => {
       if (value === "__keep") edits.delete("precision"); else edits.set("precision", value);
     });
-    if (subtype !== "sensor") text("Display Entity", "sensor");
+    if (subtype !== "sensor" && subtype !== "slider") text("Display Entity", "sensor");
   }
   if (sources.every(source => badgeCardType(source) === null && !["button", "slider"].includes(badgeSubtype(source)))) {
     text("Unit (optional)", "unit");

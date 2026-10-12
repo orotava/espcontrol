@@ -227,7 +227,7 @@ inline bool badge_driver_setup_visual(BtnSlot &slot, const ParsedCfg &config,
   ctx->display_entity = ctx->slider_action ? "" : config.sensor;
   ctx->display_attribute = ctx->slider_action ? "" : cfg_option_value(config.options, "badge_attribute");
   ctx->unit = ctx->slider_action ? "" : config.unit;
-  ctx->show_value = ctx->slider_action || config.precision == "value";
+  ctx->show_value = config.precision == "value";
   ctx->page = atoi(cfg_option_value(config.options, "badge_page").c_str());
   ctx->active_color = cfg_option_enabled(config.options, "active_color");
   const std::string decimals = cfg_option_value(config.options, "badge_decimals");

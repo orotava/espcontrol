@@ -71,7 +71,7 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
         const input = text("Entity", "entity", action === "button" ? "e.g. button.restart" : "e.g. light.kitchen", domains, true);
         if (domains.length) helpers.requireEntityDomain(input, domains, "Choose a supported entity for this interaction.");
       }
-      if (subtype !== "sensor" && subtype !== "slider" && button.precision !== "value") text("Label", "label", "e.g. Kitchen");
+      if (subtype !== "sensor" && button.precision !== "value") text("Label", "label", "e.g. Kitchen");
       if (action === "subpage") {
         if (helpers.badgeSubpageSettings) helpers.badgeSubpageSettings(panel, button);
         else {
@@ -81,7 +81,7 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
         }
       }
       helpers.renderCardIconPicker(panel, button, helpers, { field: "icon", fallback: "Auto", label: "Icon" });
-      if (subtype !== "sensor" && subtype !== "button" && subtype !== "slider") {
+      if (subtype !== "sensor" && subtype !== "button") {
         select("Display", "badge-display", button.precision || "label", [["label", "Label"], ["value", "Live value"]], value => {
           button.precision = value;
           helpers.saveField("precision", value);
@@ -131,7 +131,7 @@ export function registerBadgeCardTypes(registry: CardRegistry, cardUi: CardUiSer
             '<span class="sp-badge-content"><span class="' + helpers.escHtml(icon) + '"></span><span class="sp-badge-text">' + helpers.escHtml(label) + '</span></span>', labelHtml: "" };
       }
       const action = badgeAction(button);
-      const value = action === "slider" || button.precision === "value";
+      const value = button.precision === "value";
       const decimals = configOptionValue(button.options, "badge_decimals") || "1";
       const reading = (21.4).toFixed(Number(decimals));
       const sample = action === "slider" ? (/^(number|input_number)\./.test(button.entity) ? "35" : "35%") : reading + (button.unit || "°C");

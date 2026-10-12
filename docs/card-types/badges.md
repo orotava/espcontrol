@@ -65,6 +65,9 @@ subpages remain supported.
 The additional **Modal** type retains the option to open an existing control
 card on the panel, including cards inside a subpage. Badges created with the
 previous Sensor, Switch, Button and Slider setup remain readable and editable.
+For an existing Slider badge, **Display: Label** shows its name even while
+dragging; **Live value** shows its own reading as a whole number. This choice
+also works when editing several existing slider badges together.
 There is no separate Label badge type.
 
 Slider badges fit their icon and displayed text, including padding, and resize
