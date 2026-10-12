@@ -85,7 +85,8 @@
           "coverArtTitleSize": 7.421875,
           "coverArtArtistSize": 3.90625,
           "labelLines": 2,
-          "labelLinesDouble": 3
+          "labelLinesDouble": 3,
+          "badgeLabelScale": 0.8181818181818182
         },
         "emptyCell": {
           "radius": 0.78
@@ -118,7 +119,8 @@
           "climateCardIcon": "font_icon_card",
           "subpageChevron": "font_icon_status",
           "climateOptionTitle": "font_text_body",
-          "climateOptionValue": "font_text_body"
+          "climateOptionValue": "font_text_body",
+          "badgeLabel": "font_text_small"
         },
         "display": {
           "wrapTallLabels": true,
@@ -286,7 +288,8 @@
           "coverArtTitleSize": 7.421875,
           "coverArtArtistSize": 3.90625,
           "labelLines": 2,
-          "labelLinesDouble": 3
+          "labelLinesDouble": 3,
+          "badgeLabelScale": 0.8181818181818182
         },
         "emptyCell": {
           "radius": 0.78
@@ -319,7 +322,8 @@
           "climateCardIcon": "font_icon_card",
           "subpageChevron": "font_icon_status",
           "climateOptionTitle": "font_text_body",
-          "climateOptionValue": "font_text_body"
+          "climateOptionValue": "font_text_body",
+          "badgeLabel": "font_text_small"
         },
         "display": {
           "wrapTallLabels": true,
@@ -486,7 +490,8 @@
           "coverArtTitleSize": 7.375,
           "coverArtArtistSize": 5,
           "labelLines": 2,
-          "labelLinesDouble": 3
+          "labelLinesDouble": 3,
+          "badgeLabelScale": 0.8620689655172413
         },
         "emptyCell": {
           "radius": 1.18
@@ -520,7 +525,8 @@
           "climateCardIcon": "font_icon_card",
           "subpageChevron": "font_icon_status",
           "climateOptionTitle": "font_text_body",
-          "climateOptionValue": "font_text_body"
+          "climateOptionValue": "font_text_body",
+          "badgeLabel": "font_text_small"
         },
         "display": {
           "modal": {
@@ -681,7 +687,8 @@
           "coverArtTitleSize": 7.375,
           "coverArtArtistSize": 5,
           "labelLines": 2,
-          "labelLinesDouble": 3
+          "labelLinesDouble": 3,
+          "badgeLabelScale": 0.8620689655172413
         },
         "emptyCell": {
           "radius": 1.18
@@ -715,7 +722,8 @@
           "climateCardIcon": "font_icon_card",
           "subpageChevron": "font_icon_status",
           "climateOptionTitle": "font_text_body",
-          "climateOptionValue": "font_text_body"
+          "climateOptionValue": "font_text_body",
+          "badgeLabel": "font_text_small"
         },
         "display": {
           "modal": {
@@ -876,7 +884,8 @@
           "coverArtTitleSize": 6.875,
           "coverArtArtistSize": 3.125,
           "labelLines": 2,
-          "labelLinesDouble": 3
+          "labelLinesDouble": 3,
+          "badgeLabelScale": 0.8333333333333334
         },
         "emptyCell": {
           "radius": 0.86
@@ -909,7 +918,8 @@
           "climateCardIcon": "font_icon_card",
           "subpageChevron": "font_icon_status",
           "climateOptionTitle": "font_text_body",
-          "climateOptionValue": "font_text_body"
+          "climateOptionValue": "font_text_body",
+          "badgeLabel": "font_text_small"
         },
         "display": {
           "wrapTallLabels": true,
@@ -1071,7 +1081,8 @@
           "coverArtTitleSize": 6.875,
           "coverArtArtistSize": 3.125,
           "labelLines": 2,
-          "labelLinesDouble": 3
+          "labelLinesDouble": 3,
+          "badgeLabelScale": 0.8333333333333334
         },
         "emptyCell": {
           "radius": 0.86
@@ -1104,7 +1115,8 @@
           "climateCardIcon": "font_icon_card",
           "subpageChevron": "font_icon_status",
           "climateOptionTitle": "font_text_body",
-          "climateOptionValue": "font_text_body"
+          "climateOptionValue": "font_text_body",
+          "badgeLabel": "font_text_small"
         },
         "display": {
           "wrapTallLabels": true,
@@ -1265,7 +1277,8 @@
           "coverArtTitleSize": 6.875,
           "coverArtArtistSize": 3.125,
           "labelLines": 2,
-          "labelLinesDouble": 3
+          "labelLinesDouble": 3,
+          "badgeLabelScale": 0.8333333333333334
         },
         "emptyCell": {
           "radius": 0.86
@@ -1298,7 +1311,8 @@
           "climateCardIcon": "font_icon_card",
           "subpageChevron": "font_icon_status",
           "climateOptionTitle": "font_text_body",
-          "climateOptionValue": "font_text_body"
+          "climateOptionValue": "font_text_body",
+          "badgeLabel": "font_text_small"
         },
         "display": {
           "wrapTallLabels": true,
@@ -1457,7 +1471,8 @@
           "coverArtTitleSize": 14.583333,
           "coverArtArtistSize": 8.333333,
           "labelLines": 2,
-          "labelLinesDouble": 3
+          "labelLinesDouble": 3,
+          "badgeLabelScale": 0.8181818181818182
         },
         "emptyCell": {
           "radius": 1.67
@@ -1490,7 +1505,8 @@
           "climateCardIcon": "font_icon_card",
           "subpageChevron": "font_icon_status",
           "climateOptionTitle": "font_text_body",
-          "climateOptionValue": "font_text_body"
+          "climateOptionValue": "font_text_body",
+          "badgeLabel": "font_text_small"
         },
         "display": {
           "modal": {
@@ -1668,7 +1684,8 @@
           "coverArtTitleSize": 14.583333,
           "coverArtArtistSize": 8.333333,
           "labelLines": 2,
-          "labelLinesDouble": 3
+          "labelLinesDouble": 3,
+          "badgeLabelScale": 0.8181818181818182
         },
         "emptyCell": {
           "radius": 1.67
@@ -1701,7 +1718,8 @@
           "climateCardIcon": "font_icon_card",
           "subpageChevron": "font_icon_status",
           "climateOptionTitle": "font_text_body",
-          "climateOptionValue": "font_text_body"
+          "climateOptionValue": "font_text_body",
+          "badgeLabel": "font_text_small"
         },
         "display": {
           "modal": {
@@ -2475,9 +2493,30 @@
               "modal",
               "toggle",
               "button",
-              "slider"
+              "slider",
+              "card"
             ],
             "defaultValue": "display",
+            "omitDefault": true
+          },
+          {
+            "name": "badge_card_type",
+            "label": "Card Type",
+            "kind": "text",
+            "hidden": true,
+            "docsHidden": true,
+            "omitDefault": true
+          },
+          {
+            "name": "badge_display",
+            "label": "Badge Display",
+            "kind": "choice",
+            "values": [
+              "card",
+              "label",
+              "value"
+            ],
+            "defaultValue": "card",
             "omitDefault": true
           },
           {
