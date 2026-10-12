@@ -80,7 +80,8 @@ export function createWebStyles(dragAnimation: boolean): string {
         ".sp-badge-row{position:absolute;top:calc(var(--grid-top) + var(--btn-label)*.4);left:var(--grid-left);right:var(--grid-right);height:calc(var(--btn-label)*2.4);display:flex;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}" +
         ".sp-badge-row-items{display:flex;flex:none;width:max-content;min-width:100%;justify-content:center;box-sizing:border-box;padding-right:calc(var(--btn-label)*.6)}" +
         ".sp-badge-row[hidden]{display:none}.sp-badge-row::-webkit-scrollbar{display:none}" +
-        ".sp-badge-row .sp-btn{flex:none;margin-left:calc(var(--btn-label)*.6);min-width:calc(var(--btn-label)*5.4);padding:0 calc(var(--btn-label)*.78)}" +
+        ".sp-badge-row .sp-btn{flex:none;margin-left:calc(var(--btn-label)*.6)}" +
+        ".sp-badge-row .sp-btn.sp-badge-card{min-width:calc(var(--btn-label)*5.4);padding:0 calc(var(--btn-label)*.78) 0 calc(var(--btn-label)*1.08)}" +
         ".sp-badge-row .sp-badge-card{cursor:grab;user-select:none}.sp-badge-row .sp-badge-card.sp-dragging{opacity:.4}" +
         ".sp-badge-row .sp-badge-card.sp-drop-target{box-shadow:0 0 0 2px var(--accent)}" +
         ".sp-badge-row .sp-badge-add{align-self:center;height:calc(var(--btn-label)*2.4);min-height:0;width:calc(var(--btn-label)*2.4);min-width:calc(var(--btn-label)*2.4);max-width:calc(var(--btn-label)*2.4);padding:0;border:1px dashed var(--preview-border);border-radius:999px;background:transparent!important;display:flex;align-items:center;justify-content:center}" +

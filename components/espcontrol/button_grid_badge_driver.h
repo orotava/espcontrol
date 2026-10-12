@@ -266,8 +266,8 @@ inline bool badge_driver_setup_visual(BtnSlot &slot, const ParsedCfg &config,
   const lv_coord_t line = label_font ? label_font->line_height : 24;
   ctx->line_height = line;
   ctx->text_width_percent = display.width.vertical_axis ? 100 : display_text_width_percent(display);
-  lv_obj_set_style_pad_left(ctx->content, line * 13 / 20, LV_PART_MAIN);
-  lv_obj_set_style_pad_right(ctx->content, line * 13 / 20, LV_PART_MAIN);
+  lv_obj_set_style_pad_left(ctx->content, espcontrol::badge::content_left_padding(line), LV_PART_MAIN);
+  lv_obj_set_style_pad_right(ctx->content, espcontrol::badge::content_right_padding(line), LV_PART_MAIN);
   lv_obj_set_style_pad_column(ctx->content, line / 3, LV_PART_MAIN);
   lv_obj_t *icon_box = lv_obj_create(ctx->content);
   lv_obj_remove_style_all(icon_box);

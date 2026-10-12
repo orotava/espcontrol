@@ -4,9 +4,10 @@
 
 int main() {
   using namespace espcontrol::badge;
+  assert(content_left_padding(24) > content_right_padding(24));
   assert(width_for_text(24, 20, false) == 108);
   assert(width_for_text(24, 20, true) == 168);
-  assert(width_for_text(24, 150, false) == 212);
+  assert(width_for_text(24, 150, false) == 218);
   assert(toggle_checked(true, true));
   assert(!toggle_checked(true, false));
   assert(!toggle_checked(false, true));
