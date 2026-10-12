@@ -3,6 +3,7 @@ import { WEB_UI_COLORS } from "../state/ui_tokens";
 import { PREVIEW_THEME_COLORS, defaultCardBackgroundColor, previewEffectiveTheme } from "../state/preview_theme";
 import { configOptionValue, lighterCardColor } from "../model/config_primitives";
 import { escHtml } from "./ui_primitives";
+import { createWeatherDailyPreviewLayout } from "./weather_daily_preview";
 import {
     buttonConfigDisabledForDevice as isButtonConfigDisabledForDevice,
     cardPreviewTextColor,
@@ -56,6 +57,8 @@ export function createPreviewRenderFeature(dependencies: PreviewRenderDependenci
     const { isConfigLocked } = dependencies.shell;
     const { ctx, resolveIcon, sizeClass } = dependencies.grid;
     const { renderSelectionBar, updatePreviewHint } = dependencies.selection;
+    const weatherLayout = createWeatherDailyPreviewLayout(document, dependencies.layout.config,
+        () => state.screenRotation === "90" || state.screenRotation === "270");
     // ── Preview rendering (unified) ────────────────────────────────────────
     function previewHtmlValue(this: any, typePreview?: any, key?: any, fallback?: any) {
         return previewValue(typePreview, key, fallback);
@@ -98,6 +101,7 @@ export function createPreviewRenderFeature(dependencies: PreviewRenderDependenci
         const previewColors = PREVIEW_THEME_COLORS[previewEffectiveTheme(state)];
         dependencies.updateClockBarItemUi();
         var main: any = els.previewMain;
+        weatherLayout.disconnect();
         main.innerHTML = "";
         main.className = "sp-main" + (state.subpageChevronsOn ? "" : " sp-hide-subpage-chevrons");
         if (gridPreviewBlockedByRotationStartup()) {
@@ -205,6 +209,7 @@ export function createPreviewRenderFeature(dependencies: PreviewRenderDependenci
                         iconHtml +
                         labelHtml;
                 main.appendChild(btn);
+                if (btn.classList.contains("sp-weather-daily-card")) weatherLayout.observe(btn);
             }
             else {
                 var empty: any = document.createElement("div");
