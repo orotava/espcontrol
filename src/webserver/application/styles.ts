@@ -81,7 +81,7 @@ export function createWebStyles(dragAnimation: boolean): string {
         ".sp-badge-row{position:absolute;top:var(--grid-top);left:var(--grid-left);right:var(--grid-right);height:calc(var(--btn-label)*2);display:flex;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}" +
         ".sp-badge-row-items{display:flex;flex:none;width:max-content;min-width:100%;justify-content:center;box-sizing:border-box;padding-right:calc(var(--btn-label)*.5)}" +
         ".sp-badge-row[hidden]{display:none}.sp-badge-row::-webkit-scrollbar{display:none}" +
-        ".sp-badge-row .sp-btn{flex:none;margin-left:calc(var(--btn-label)*.5);min-width:calc(var(--btn-label)*4.5);max-width:calc(100cqw - var(--grid-left) - var(--grid-right) - var(--btn-label));padding:0 calc(var(--btn-label)*.4)}" +
+        ".sp-badge-row .sp-btn{flex:none;margin-left:calc(var(--btn-label)*.5);min-width:calc(var(--btn-label)*4.5);max-width:calc(100cqw - var(--grid-left) - var(--grid-right) - var(--btn-label));padding:0 calc(var(--btn-label)*.4);padding-left:calc(var(--btn-label)*.65)}" +
         ".sp-badge-row .sp-badge-slider{min-width:calc(var(--btn-label)*7)}" +
         ".sp-has-badge-row .sp-main{top:calc(var(--grid-top) + var(--btn-label)*2.33)}" +
         ".sp-badge-list{display:flex;flex-direction:column;gap:10px}" +

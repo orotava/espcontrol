@@ -235,7 +235,7 @@ inline bool badge_driver_setup_visual(BtnSlot &slot, const ParsedCfg &config,
   lv_obj_set_flex_align(ctx->content, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
   const lv_font_t *label_font = slot.text_lbl ? lv_obj_get_style_text_font(slot.text_lbl, LV_PART_MAIN) : nullptr;
   const lv_coord_t line = label_font ? label_font->line_height : 24;
-  lv_obj_set_style_pad_left(ctx->content, line * 2 / 5, LV_PART_MAIN);
+  lv_obj_set_style_pad_left(ctx->content, line * 13 / 20, LV_PART_MAIN);
   lv_obj_set_style_pad_right(ctx->content, line * 2 / 5, LV_PART_MAIN);
   lv_obj_set_style_pad_column(ctx->content, line / 3, LV_PART_MAIN);
   lv_obj_t *icon_box = lv_obj_create(ctx->content);
