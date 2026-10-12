@@ -158,6 +158,15 @@ for filename, namespace, names in groups:
 source += r'''
 #line 1 "card_colour_rendering_cases"
 int main() {
+  const auto toggle_badge = parse_subpage_config(
+    "~B,1|BD,switch.office,Office,Lightbulb,Auto,,,label,badge_action=toggle").at(0);
+  assert(toggle_badge.type == "badge");
+  assert(toggle_badge.options == "badge_action=toggle");
+  const auto slider_badge = parse_subpage_config(
+    "~B,1|BD,light.desk,Brightness,Lightbulb,Auto,,,value,badge_action=slider").at(0);
+  assert(slider_badge.options == "badge_action=slider");
+  assert(parsed_cfg_from_subpage_btn(slider_badge).options == "badge_action=slider");
+
   for (const ThemePalette *theme : {&DARK_THEME, &LIGHT_THEME}) {
     set_active_theme_palette(*theme);
     for (uint32_t background : {0xFFEC16u, 0x88C440u, 0xFFFFFFu, 0x00BCD4u}) {
