@@ -25,7 +25,7 @@ wifi:
 # ---------------------------------------------------------------------------
 packages:
   api_encryption:
-    url: https://github.com/jtenniswood/espcontrol/
+    url: https://github.com/orotava/espcontrol/
     file: common/addon/api_encryption_dynamic.yaml
     refresh: 1s
   setup:
